@@ -1,24 +1,35 @@
 new Vue({
     el: '#app',
     data: {
-        Cid: '',
+        Cid: '12345',
         view: 'myBills',
+        showbillmenu: false,
         showPlayerBills: false, 
-        myBills: [],
-        societyBills: [],
-        billingHistory: [],
-        players: [],
+        myBills: [
+           
+        ],
+        societyBills: [
+           
+        ],
+        billingHistory: [
+           
+        ],
+        players: [
+        ],
         newBill: {
             reason: '',
             amount: 0
         },
-        nearbyPlayers: [],
+        nearbyPlayers: [
+        ],
         showBillDetails: false,
         selectedBill: {},
         selectedPlayer: null,
         loadingPlayers: false,
         searchQuery: '',
-        selectedPlayerBills: []
+        selectedPlayerBills: [
+           
+        ]
     },
     computed: {
         filteredPlayers() {
@@ -122,6 +133,7 @@ new Vue({
         },
         closeUI() {
             this.setView('myBills');
+            this.showbillmenu = false;
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:close`, {
                 method: 'POST',
                 headers: {
@@ -139,6 +151,7 @@ new Vue({
                 
                 this.Cid = data.cid;
                 this.myBills = data.myBills;
+                this.showbillmenu = true;
                 this.societyBills = data.societyBills;
                 this.billingHistory = data.billingHistory;
 
