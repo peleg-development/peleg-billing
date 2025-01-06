@@ -142,26 +142,23 @@ new Vue({
             }).then(() => {
                 SetNuiFocus(false, false); 
             });
+        },
+        opentest(data) {
+            this.Cid = data.cid || null; 
+            this.myBills = Array.isArray(data.myBills) ? data.myBills : [];
+            this.showbillmenu = true;
+            this.societyBills = Array.isArray(data.societyBills) ? data.societyBills : []; 
+            this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
+            
+            this.showPlayerBills = !!data.jobAccess; 
+            
         }
     },
     mounted() {
         window.addEventListener('message', (event) => {
             if (event.data.type === 'openMe') {
                 const data = event.data.data;
-                
-                this.Cid = data.cid;
-                this.myBills = data.myBills;
-                this.showbillmenu = true;
-                this.societyBills = data.societyBills;
-                this.billingHistory = data.billingHistory;
-
-                if (data.jobAccess) {
-                    this.showPlayerBills = true;
-                } else {
-                    this.showPlayerBills = false;
-                }
-
-                this.setView('myBills');
+                this.opentest(data);
             }
         });
     }

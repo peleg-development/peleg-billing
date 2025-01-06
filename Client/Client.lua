@@ -4,20 +4,23 @@ TSE = function (event, ...)
     TriggerServerEvent(event, ...)
 end
 
-local OpenUi = function(data)
-    SetNuiFocus(true, true)
-    SendNUIMessage({
-        type = 'openMe',
+local function OpenUi(data)
+    if not data then
+        print("Error: No data provided to OpenUi")
+        return
+    end
+
+    local message = {
+        type = "openMe",
         data = data
-    })
+    }
+    print("Sending NUI data:", json.encode(message))
+    SendNUIMessage(message)
+    SetNuiFocus(true, true)
 end
 
 RegisterNetEvent('krs-billing:openBillingMenu', function(data)
-    SetNuiFocus(true, true)
-    SendNUIMessage({
-        type = "openMe",
-        data = data
-    })
+    OpenUi(data)
 end)
 
 RegisterNUICallback('krs-billing:callback:refundBill', function(data, cb)
