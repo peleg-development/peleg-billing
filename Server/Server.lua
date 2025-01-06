@@ -217,3 +217,13 @@ if Config.BillingItem and Config.BillingItem ~= "" then
         end
     end)
 end
+
+QBCore.Functions.CreateCallback('krs-billing:getPlayerName', function(source, cb, serverId)
+    local targetPlayer = QBCore.Functions.GetPlayer(tonumber(serverId))
+    if targetPlayer then
+        local charInfo = targetPlayer.PlayerData.charinfo
+        cb(("%s %s"):format(charInfo.firstname, charInfo.lastname))
+    else
+        cb("Unknown")
+    end
+end)

@@ -29,10 +29,44 @@ RegisterNUICallback('close', function()
     SetNuiFocus(false, false)
 end)
 
+RegisterNUICallback('krs-billing:callback:close', function(data, cb)
+    SetNuiFocus(false, false)
+    cb('ok')
+end)
+
+
 RegisterNUICallback('krs-billing:nui:callback:billPlayer', function (data, cb)
     TriggerServerEvent('krs-billing:server:billPlayer', data)
     cb("ok")
 end)
+
+RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
+    local players = {}
+    local playerPed = PlayerPedId()
+    local playerCoords = GetEntityCoords(playerPed)
+
+    for _, player in ipairs(GetActivePlayers()) do
+        if player ~= PlayerId() then
+            local targetPed = GetPlayerPed(player)
+            local targetCoords = GetEntityCoords(targetPed)
+
+            if #(playerCoords - targetCoords) < 10.0 then 
+                local serverId = GetPlayerServerId(player)
+
+                QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(name)
+                    table.insert(players, { id = serverId, name = name or "Unknown" })
+                    
+                    if #players == #GetActivePlayers() - 1 then
+                        cb(players)
+                    end
+                end, serverId)
+            end
+        end
+    end
+end)
+
+
+
 
 RegisterCommand(Config.BillCommand, function()
     local playerPed = PlayerPedId()
