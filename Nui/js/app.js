@@ -124,13 +124,30 @@ new Vue({
         },
         fetchNearbyPlayers() {
             this.loadingPlayers = true;
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:getNearbyPlayers`)
-                .then(response => response.json())
+            fetch(`https://${GetParentResourceName()}/krs-billing:callback:getNearbyPlayers`, {
+                method: 'POST', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}), 
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Network response was not ok (${response.status})`);
+                    }
+                    return response.json();
+                })
                 .then(players => {
                     this.nearbyPlayers = players;
+                    console.log('Nearby Players:', players); 
+                    this.loadingPlayers = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching nearby players:', error);
                     this.loadingPlayers = false;
                 });
         },
+    
         closeUI() {
             this.setView('myBills');
             this.showbillmenu = false;

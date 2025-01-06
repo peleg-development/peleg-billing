@@ -1,6 +1,6 @@
 Config = {}
 
-Config.BillingItem = "billing_tablet" -- Define the item here 
+Config.BillingItem = "billing_tablet" -- Define the item here  leave empty for no item
 Config.BillCommand = "bill" -- Define the command to open the billing menu
 
 Config.Jobs = {

@@ -219,11 +219,15 @@ if Config.BillingItem and Config.BillingItem ~= "" then
 end
 
 QBCore.Functions.CreateCallback('krs-billing:getPlayerName', function(source, cb, serverId)
+    print(string.format("[peleg-billing] Server callback 'getPlayerName' triggered for serverId %d.", serverId))
     local targetPlayer = QBCore.Functions.GetPlayer(tonumber(serverId))
     if targetPlayer then
         local charInfo = targetPlayer.PlayerData.charinfo
-        cb(("%s %s"):format(charInfo.firstname, charInfo.lastname))
+        local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
+        print(string.format("[peleg-billing] Retrieved name for serverId %d: %s", serverId, fullName))
+        cb(fullName)
     else
+        print(string.format("[peleg-billing] No player found with serverId %d. Returning 'Unknown'.", serverId))
         cb("Unknown")
     end
 end)
