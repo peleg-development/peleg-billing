@@ -1,3 +1,46 @@
+:root {
+    /* Primary Colors */
+    --color-background: #1a1b1e;
+    --color-background-dark: #141517;
+    --color-sidebar: #1f2023;
+    --color-sidebar-border: #2d2e32;
+    --color-sidebar-hover: #2d2e32;
+    --color-sidebar-hover-text: #6366f1;
+    --color-sidebar-active: #6366f1;
+    --color-sidebar-active-text: #ffffff;
+    --color-text: #e2e8f0;
+    --color-text-secondary: #a0aec0;
+    --color-text-placeholder: #a0aec0;
+    --color-primary: #6366f1;
+    --color-primary-gradient: linear-gradient(45deg, #6366f1, #818cf8);
+    --color-secondary: #818cf8;
+    --color-border: #2d2e32;
+    --color-border-hover: #6366f1;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-hover: rgba(0, 0, 0, 0.2);
+    
+    /* Status Colors */
+    --color-status-paid-bg: #1c4532;
+    --color-status-paid-text: #48bb78;
+    --color-status-pending-bg: #742a2a;
+    --color-status-pending-text: #fc8181;
+    
+    /* Modal Colors */
+    --color-modal-overlay: rgba(0, 0, 0, 0.8);
+    --color-modal-background: #1f2023;
+    
+    /* Button Colors */
+    --color-button-hover: #6366f1;
+    --color-button-background: linear-gradient(45deg, #6366f1, #818cf8);
+    --color-button-details-background: #2d2e32;
+    --color-button-details-hover: linear-gradient(45deg, #6366f1, #818cf8);
+    
+    /* Scrollbar Colors */
+    --color-scrollbar-track: #141517;
+    --color-scrollbar-thumb: #2d2e32;
+    --color-scrollbar-thumb-hover: #3d3e42;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,8 +49,8 @@
 }
 
 body {
-    background-color: #1a1b1e;
-    color: #e2e8f0;
+    background-color: var(--color-background);
+    color: var(--color-text);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,10 +61,10 @@ body {
 #app {
     width: 1024px;
     height: 768px;
-    background: #141517;
+    background: var(--color-background-dark);
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 40px var(--color-shadow);
 }
 
 /* Dashboard Layout */
@@ -33,9 +76,9 @@ body {
 /* Sidebar Styles */
 .sidebar {
     width: 220px;
-    background: #1f2023;
+    background: var(--color-sidebar);
     padding: 1.5rem;
-    border-right: 1px solid #2d2e32;
+    border-right: 1px solid var(--color-sidebar-border);
 }
 
 .logo {
@@ -44,12 +87,12 @@ body {
     gap: 0.75rem;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--color-text);
     margin-bottom: 2rem;
 }
 
 .logo i {
-    color: #6366f1;
+    color: var(--color-primary);
 }
 
 /* Navigation Menu */
@@ -67,7 +110,7 @@ body {
     border-radius: 12px;
     border: none;
     background: transparent;
-    color: #a0aec0;
+    color: var(--color-text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 0.95rem;
@@ -81,25 +124,25 @@ body {
 }
 
 .nav-item:hover {
-    background: #2d2e32;
-    color: #6366f1;
+    background: var(--color-sidebar-hover);
+    color: var(--color-primary-hover-text);
 }
 
 .nav-item.active {
-    background: #6366f1;
-    color: white;
+    background: var(--color-sidebar-active);
+    color: var(--color-sidebar-active-text);
 }
 
 /* Main Content Area */
 .main-content {
     flex: 1;
     padding: 1.5rem;
-    background: #141517;
+    background: var(--color-background-dark);
     overflow-y: auto;
 }
 
 .content-section h2 {
-    color: #e2e8f0;
+    color: var(--color-text);
     margin-bottom: 1.5rem;
     font-size: 1.5rem;
     padding: 0 1rem;
@@ -114,19 +157,20 @@ body {
 }
 
 .bill-card {
-    background: linear-gradient(145deg, #1f2023 0%, #1a1b1e 100%);
-    border: 1px solid #2d2e32;
+    background: linear-gradient(145deg, var(--color-sidebar) 0%, var(--color-background) 100%);
+    border: 1px solid var(--color-border);
     border-radius: 16px;
     padding: 1.5rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .bill-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    border-color: #6366f1;
+    box-shadow: 0 8px 24px var(--color-shadow-hover);
+    border-color: var(--color-primary);
 }
 
 .bill-card-header {
@@ -139,8 +183,8 @@ body {
 .amount {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #e2e8f0;
-    background: linear-gradient(45deg, #6366f1, #818cf8);
+    color: var(--color-text);
+    background: var(--color-primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -153,13 +197,13 @@ body {
 }
 
 .status-badge.paid {
-    background: #1c4532;
-    color: #48bb78;
+    background: var(--color-status-paid-bg);
+    color: var(--color-status-paid-text);
 }
 
 .status-badge.pending {
-    background: #742a2a;
-    color: #fc8181;
+    background: var(--color-status-pending-bg);
+    color: var(--color-status-pending-text);
 }
 
 .bill-card-body {
@@ -168,13 +212,13 @@ body {
 
 .reason {
     font-size: 1.1rem;
-    color: #e2e8f0;
+    color: var(--color-text);
     margin-bottom: 1rem;
     font-weight: 500;
 }
 
 .sender, .biller, .time {
-    color: #a0aec0;
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
     margin: 0.25rem 0;
     display: flex;
@@ -184,13 +228,13 @@ body {
 
 /* Bill Player Form */
 .billing-form-container {
-    background: linear-gradient(145deg, #1f2023 0%, #1a1b1e 100%);
-    border: 1px solid #2d2e32;
+    background: linear-gradient(145deg, var(--color-sidebar) 0%, var(--color-background) 100%);
+    border: 1px solid var(--color-border);
     border-radius: 20px;
     padding: 2rem;
     max-width: 600px;
     margin: 2rem auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 32px var(--color-shadow-hover);
 }
 
 .form-group {
@@ -199,7 +243,7 @@ body {
 
 .form-group label {
     display: block;
-    color: #e2e8f0;
+    color: var(--color-text);
     font-size: 1rem;
     font-weight: 500;
     margin-bottom: 0.75rem;
@@ -208,36 +252,36 @@ body {
 .form-group input {
     width: 100%;
     padding: 1rem;
-    background: #141517;
-    border: 2px solid #2d2e32;
+    background: var(--color-background-dark);
+    border: 2px solid var(--color-border);
     border-radius: 12px;
-    color: #e2e8f0;
+    color: var(--color-text);
     font-size: 1rem;
     transition: all 0.2s ease;
 }
 
 .form-group input:focus {
-    border-color: #6366f1;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
     outline: none;
 }
 
 /* Selected Player Card */
 .selected-player-card {
-    background: #141517;
+    background: var(--color-background-dark);
     border-radius: 16px;
     padding: 1.25rem;
     margin: 1rem 0;
     display: flex;
     align-items: center;
     gap: 1rem;
-    border: 2px solid #2d2e32;
+    border: 2px solid var(--color-border);
 }
 
 .player-avatar {
     width: 48px;
     height: 48px;
-    background: linear-gradient(45deg, #6366f1, #818cf8);
+    background: var(--color-primary-gradient);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -249,7 +293,7 @@ body {
 
 /* Buttons */
 .btn-refund, .btn-submit, .btn-details {
-    background: linear-gradient(45deg, #6366f1, #818cf8);
+    background: var(--color-button-background);
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 12px;
@@ -270,11 +314,11 @@ body {
 .btn-details {
     width: 100%;
     justify-content: center;
-    background: #2d2e32;
+    background: var(--color-button-details-background);
 }
 
 .btn-details:hover {
-    background: linear-gradient(45deg, #6366f1, #818cf8);
+    background: var(--color-button-details-hover);
 }
 
 /* Modal Styles */
@@ -284,7 +328,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--color-modal-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -292,8 +336,8 @@ body {
 }
 
 .modal-container {
-    background: #1f2023;
-    border: 1px solid #2d2e32;
+    background: var(--color-modal-background);
+    border: 1px solid var(--color-border);
     border-radius: 20px;
     width: 90%;
     max-width: 500px;
@@ -302,7 +346,7 @@ body {
 
 .modal-header {
     padding: 1.5rem;
-    border-bottom: 1px solid #2d2e32;
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -316,7 +360,7 @@ body {
 .modal-close {
     background: none;
     border: none;
-    color: #a0aec0;
+    color: var(--color-text-secondary);
     cursor: pointer;
     padding: 0.5rem;
     font-size: 1.25rem;
@@ -330,21 +374,21 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 1rem 0;
-    border-bottom: 1px solid #2d2e32;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .detail-label {
-    color: #a0aec0;
+    color: var(--color-text-secondary);
 }
 
 .detail-value {
-    color: #e2e8f0;
+    color: var(--color-text);
     font-weight: 500;
 }
 
 .modal-footer {
     padding: 1.5rem;
-    border-top: 1px solid #2d2e32;
+    border-top: 1px solid var(--color-border);
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
@@ -356,16 +400,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #141517;
+    background: var(--color-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2d2e32;
+    background: var(--color-scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3d3e42;
+    background: var(--color-scrollbar-thumb-hover);
 }
 
 /* Animations */
@@ -380,10 +424,6 @@ body {
     }
 }
 
-.bill-card {
-    animation: fadeIn 0.3s ease-out;
-}
-
 /* Search Section */
 .search-container {
     position: relative;
@@ -393,15 +433,15 @@ body {
 .search-input {
     width: 100%;
     padding: 1rem 1rem 1rem 3rem;
-    background: #1f2023;
-    border: 2px solid #2d2e32;
+    background: var(--color-sidebar);
+    border: 2px solid var(--color-border);
     border-radius: 12px;
-    color: #e2e8f0;
+    color: var(--color-text);
     font-size: 1rem;
 }
 
 .search-input:focus {
-    border-color: #6366f1;
+    border-color: var(--color-primary);
     outline: none;
 }
 
@@ -410,7 +450,7 @@ body {
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #a0aec0;
+    color: var(--color-text-secondary);
 }
 
 /* Transitions */
