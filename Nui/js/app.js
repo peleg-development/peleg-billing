@@ -33,15 +33,16 @@ new Vue({
     methods: {
         setView(view) {
             if (this.view !== view) {
+                this.view = view;
                 if (this.view === 'billPlayer') {
                     this.fetchNearbyPlayers().then(() => {
                         if (this.nearbyPlayers.length > 0) {
                             const randomIndex = Math.floor(Math.random() * this.nearbyPlayers.length);
                             this.selectedPlayer = this.nearbyPlayers[randomIndex];
                         }
+                        this.view = view;
                     });
                 }
-                this.view = view;
             }
         },
 
