@@ -5,31 +5,21 @@ new Vue({
         view: 'myBills',
         showbillmenu: false,
         showPlayerBills: false, 
-        myBills: [
-           
-        ],
-        societyBills: [
-           
-        ],
-        billingHistory: [
-           
-        ],
-        players: [
-        ],
+        myBills: [],
+        societyBills: [],
+        billingHistory: [],
+        players: [],
         newBill: {
             reason: '',
             amount: 0
         },
-        nearbyPlayers: [
-        ],
+        nearbyPlayers: [],
         showBillDetails: false,
         selectedBill: {},
         selectedPlayer: null,
         loadingPlayers: false,
         searchQuery: '',
-        selectedPlayerBills: [
-           
-        ]
+        selectedPlayerBills: []
     },
     computed: {
         filteredPlayers() {
@@ -54,6 +44,7 @@ new Vue({
                 this.view = view;
             }
         },
+
         billPlayer() {
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:billPlayer`, {
                 method: 'POST',
@@ -97,9 +88,11 @@ new Vue({
             this.selectedBill = bill;
             this.showBillDetails = true;
         },
+
         closeDetails() {
             this.showBillDetails = false;
         },
+
         markAsPaid(billId) {
             const bill = this.myBills.find(bill => bill.id === billId);
             if (bill) {
@@ -124,6 +117,7 @@ new Vue({
                 });
             }
         },
+
         fetchNearbyPlayers() {
             this.loadingPlayers = true;
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:getNearbyPlayers`, {
@@ -170,6 +164,7 @@ new Vue({
                 SetNuiFocus(false, false); 
             });
         },
+
         opentest(data) {
             this.Cid = data.cid || null; 
             this.myBills = Array.isArray(data.myBills) ? data.myBills : [];
@@ -178,7 +173,6 @@ new Vue({
             this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
             
             this.showPlayerBills = !!data.jobAccess; 
-            
         }
     },
     mounted() {
