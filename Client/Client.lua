@@ -1,9 +1,5 @@
 local QBCore = exports["qb-core"]:GetSharedObject()
 
-TSE = function (event, ...)
-    TriggerServerEvent(event, ...)
-end
-
 local function OpenUi(data)
     if not data then
         print("Error: No data provided to OpenUi")
@@ -34,6 +30,25 @@ RegisterNUICallback('close', function()
 end)
 
 RegisterNUICallback('krs-billing:nui:callback:billPlayer', function (data, cb)
-    TSE('krs-billing:server:billPlayer', data)
+    TriggerServerEvent('krs-billing:server:billPlayer', data)
     cb("ok")
 end)
+
+RegisterCommand(Config.BillCommand, function()
+    local playerPed = PlayerPedId()
+
+    if not Config.BillingItem or Config.BillingItem == "" then
+        print("Config.BillingItem is not set. Please configure the required billing item.")
+        QBCore.Functions.Notify("Billing item is not configured. Contact an admin.", "error")
+        return
+    end
+
+    QBCore.Functions.TriggerCallback("QBCore:HasItem", function(hasItem)
+        if hasItem then
+            local playerData = QBCore.Functions.GetPlayerData()
+            TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
+        else
+            QBCore.Functions.Notify("You need a billing tablet to open the menu!", "error")
+        end
+    end, Config.BillingItem) 
+end, false)

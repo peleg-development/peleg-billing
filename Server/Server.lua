@@ -1,4 +1,5 @@
 ---@diagnostic disable: undefined-global
+local QBCore = exports["qb-core"]:GetSharedObject()
 
 function sendToDiscord(title, message)
     local webhookURL = "YOUR_WEBHOOK_URL"
@@ -178,3 +179,41 @@ RegisterNetEvent('krs-billing:refundBill', function(billId, jobName)
         TriggerClientEvent('QBCore:Notify', src, 'You do not have permission to refund this bill', 'error')
     end
 end)
+
+RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
+    local src = source
+    local unpaidBills, billingHistory = GetPlayerBills(citizenId)
+    local societyBills = {}
+
+    local Player = QBCore.Functions.GetPlayer(src)
+    if Player and Player.PlayerData.job then
+        local jobName = Player.PlayerData.job.name
+        local jobGrade = tostring(Player.PlayerData.job.grade.level)
+
+        if Config.Jobs[jobName] and Config.Jobs[jobName][jobGrade] then
+            local jobConfig = Config.Jobs[jobName][jobGrade]
+            if jobConfig.BossAccess then
+                societyBills = GetSocietyBills(jobName)
+            end
+
+            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+                myBills = unpaidBills,
+                billingHistory = billingHistory,
+                societyBills = societyBills,
+                jobAccess = jobConfig.BossAccess,
+                cid = citizenId
+            })
+        else
+            TriggerClientEvent('QBCore:Notify', src, "You don't have access to the billing menu!", "error")
+        end
+    end
+end)
+
+if Config.BillingItem and Config.BillingItem ~= "" then
+    QBCore.Functions.CreateUseableItem(Config.BillingItem, function(source)
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            TriggerClientEvent('krs-billing:useBillingTablet', source)
+        end
+    end)
+end
