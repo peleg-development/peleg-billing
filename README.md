@@ -1,10 +1,10 @@
 # Peleg-Billing | V1.0 | Not finished!
-https://discord.gg/6xjSVb2HXj for updates join my discord server
+
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
 [![Issues](https://img.shields.io/github/issues/ku-development/krs-billing)](https://github.com/ku-development/krs-billing/issues)
 [![Contributors](https://img.shields.io/github/contributors/ku-development/krs-billing)](none)
-
+https://discord.gg/6xjSVb2HXj for updates join my discord server
 ### Overview: 
 
 Elevate your server’s job experience with **KRS-Billing**, an advanced billing system designed to enhance gameplay and streamline transactions. Our system features a unique, clean, and user-friendly interface, making it easy for workers to manage and issue bills with precision.
