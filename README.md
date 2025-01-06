@@ -1,5 +1,5 @@
 # Peleg-Billing | V1.0 | Not finished!
-
+https://discord.gg/6xjSVb2HXj for updates join my discord server
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
 [![Issues](https://img.shields.io/github/issues/ku-development/krs-billing)](https://github.com/ku-development/krs-billing/issues)
