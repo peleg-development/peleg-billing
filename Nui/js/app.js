@@ -43,7 +43,6 @@ new Vue({
     methods: {
         setView(view) {
             if (this.view !== view) {
-                this.view = view;
                 if (this.view === 'billPlayer') {
                     this.fetchNearbyPlayers().then(() => {
                         if (this.nearbyPlayers.length > 0) {
@@ -52,6 +51,7 @@ new Vue({
                         }
                     });
                 }
+                this.view = view;
             }
         },
         billPlayer() {
@@ -76,6 +76,7 @@ new Vue({
                 }
             });
         },
+
         refundBill(billId) {
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:refundBill`, {
                 method: 'POST',
@@ -91,6 +92,7 @@ new Vue({
                 }
             });
         },
+
         showDetails(bill) {
             this.selectedBill = bill;
             this.showBillDetails = true;
@@ -141,7 +143,7 @@ new Vue({
                     console.log('Nearby Players:', players);                     
                     if (Array.isArray(players) && players.length > 0) {
                         players.forEach((player, index) => {
-                            console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}`);
+                            console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}, CID = ${player.cid}`);
                         });
                     } else {
                         console.log('[peleg-billing] No nearby players found.');
