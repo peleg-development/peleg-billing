@@ -1,4 +1,4 @@
-local QBCore = exports["qb-core"]:GetSharedObject()
+local QBCore = exports["qb-core"]:GetCoreObject()
 
 local function OpenUi(data)
     if not data then
@@ -64,8 +64,6 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
         end
     end
 end)
-
-
 
 
 RegisterCommand(Config.BillCommand, function()

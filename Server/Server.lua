@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
-local QBCore = exports["qb-core"]:GetSharedObject()
+local QBCore = exports["qb-core"]:GetCoreObject()
 
 function sendToDiscord(title, message)
     local webhookURL = "YOUR_WEBHOOK_URL"
