@@ -224,10 +224,11 @@ QBCore.Functions.CreateCallback('krs-billing:getPlayerName', function(source, cb
     if targetPlayer then
         local charInfo = targetPlayer.PlayerData.charinfo
         local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
-        print(string.format("[peleg-billing] Retrieved name for serverId %d: %s", serverId, fullName))
-        cb(fullName)
+        local cid = charInfo.cid 
+        print(string.format("[peleg-billing] Retrieved name for serverId %d: %s | CID: %s", serverId, fullName, cid))
+        cb({ name = fullName, cid = cid })
     else
-        print(string.format("[peleg-billing] No player found with serverId %d. Returning 'Unknown'.", serverId))
-        cb("Unknown")
+        print(string.format("[peleg-billing] No player found with serverId %d. Returning 'Unknown' and 'N/A' for CID.", serverId))
+        cb({ name = "Unknown", cid = "N/A" })
     end
 end)

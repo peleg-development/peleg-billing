@@ -138,8 +138,16 @@ new Vue({
                     return response.json();
                 })
                 .then(players => {
+                    console.log('Nearby Players:', players);                     
+                    if (Array.isArray(players) && players.length > 0) {
+                        players.forEach((player, index) => {
+                            console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}`);
+                        });
+                    } else {
+                        console.log('[peleg-billing] No nearby players found.');
+                    }
+
                     this.nearbyPlayers = players;
-                    console.log('Nearby Players:', players); 
                     this.loadingPlayers = false;
                 })
                 .catch(error => {

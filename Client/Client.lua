@@ -40,50 +40,68 @@ RegisterNUICallback('krs-billing:nui:callback:billPlayer', function (data, cb)
     cb("ok")
 end)
 
+local function serializeTable(tbl)
+    local status, result = pcall(function()
+        return json.encode(tbl)
+    end)
+    if status then
+        return result
+    else
+        return "{}" 
+    end
+end
+
 RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
-    print("[peleg-billing] NUI callback 'getNearbyPlayers' triggered.")
-    local players = {}
-    local playerPed = PlayerPedId()
-    local playerCoords = GetEntityCoords(playerPed)
-    local nearbyPlayers = {}
+    local status, err = pcall(function()
+        print("[peleg-billing] NUI callback 'getNearbyPlayers' triggered.")
+        local players = {}
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local nearbyPlayers = {}
 
-    for _, player in ipairs(GetActivePlayers()) do
-        if player ~= PlayerId() then
-            local targetPed = GetPlayerPed(player)
-            local targetCoords = GetEntityCoords(targetPed)
+        for _, player in ipairs(GetActivePlayers()) do
+            if player ~= PlayerId() then
+                local targetPed = GetPlayerPed(player)
+                local targetCoords = GetEntityCoords(targetPed)
 
-            if #(playerCoords - targetCoords) < 10.0 then 
-                local serverId = GetPlayerServerId(player)
-                table.insert(nearbyPlayers, serverId)
+                if #(playerCoords - targetCoords) < 10.0 then 
+                    local serverId = GetPlayerServerId(player)
+                    table.insert(nearbyPlayers, serverId)
+                end
             end
         end
-    end
 
-    local totalNearby = #nearbyPlayers
-    local processed = 0
+        local totalNearby = #nearbyPlayers
+        local processed = 0
 
-    print(string.format("[peleg-billing] Found %d nearby players.", totalNearby))
+        print(string.format("[peleg-billing] Found %d nearby players.", totalNearby))
 
-    if totalNearby == 0 then
-        print("[peleg-billing] No nearby players found. Returning empty list.")
-        cb(players)
-        return
-    end
+        if totalNearby == 0 then
+            print("[peleg-billing] No nearby players found. Returning empty list.")
+            cb(players)
+            return
+        end
 
-    for _, serverId in ipairs(nearbyPlayers) do
-        QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(name)
-            print(string.format("[peleg-billing] Retrieved name for serverId %d: %s", serverId, name))
-            table.insert(players, { id = serverId, name = name or "Unknown" })
-            processed = processed + 1
+        for _, serverId in ipairs(nearbyPlayers) do
+            QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(response)
+                print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
+                table.insert(players, { id = serverId, name = response.name, cid = response.cid })
+                processed = processed + 1
 
-            if processed == totalNearby then
-                print("[peleg-billing] All nearby players processed. Sending data to NUI.")
-                cb(players)
-            end
-        end, serverId)
+                if processed == totalNearby then
+                    local serializedPlayers = serializeTable(players)
+                    print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
+                    cb(players)
+                end
+            end, serverId)
+        end
+    end)
+
+    if not status then
+        print(string.format("[peleg-billing] Error in 'getNearbyPlayers' callback: %s", tostring(err)))
+        cb({ error = "An error occurred while fetching nearby players." })
     end
 end)
-
 
 RegisterCommand(Config.BillCommand, function()
     local playerPed = PlayerPedId()
@@ -91,7 +109,6 @@ RegisterCommand(Config.BillCommand, function()
     if not Config.BillingItem or Config.BillingItem == "" then
         local playerData = QBCore.Functions.GetPlayerData()
         TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
-        QBCore.Functions.Notify("Billing item is not configured. Contact an admin.", "error")
         return
     end
 
