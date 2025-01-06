@@ -224,7 +224,7 @@ QBCore.Functions.CreateCallback('krs-billing:getPlayerName', function(source, cb
     if targetPlayer then
         local charInfo = targetPlayer.PlayerData.charinfo
         local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
-        local cid = targetPlayer.citizenid 
+        local cid = targetPlayer.cid 
         print(string.format("[peleg-billing] Retrieved name for serverId %d: %s | CID: %s", serverId, fullName, cid))
         cb({ name = fullName, cid = cid })
     else
