@@ -9,7 +9,7 @@
 https://discord.gg/6xjSVb2HXj for updates join my discord server
 ### Overview: 
 
-Elevate your server’s job experience with **KRS-Billing**, an advanced billing system designed to enhance gameplay and streamline transactions. Our system features a unique, clean, and user-friendly interface, making it easy for workers to manage and issue bills with precision.
+Elevate your server’s job experience with **Peleg-Billing**, an advanced billing system designed to enhance gameplay and streamline transactions. Our system features a unique, clean, and user-friendly interface, making it easy for workers to manage and issue bills with precision.
 
 ### **Key Features**
 
@@ -19,7 +19,9 @@ Elevate your server’s job experience with **KRS-Billing**, an advanced billing
 
 - **Job Boss Management:** Empower job bosses with full access to all bills issued within their company. They can review, manage, and even refund bills, with the refunded amount being deducted from the society’s funds and returned to the player.
 
-### **Why Choose KRS-Billing?**
+- **ESX and QB support!**
+  
+### **Why Choose Peleg-Billing?**
 
 In many servers, the billing systems are always boaring and ugly or just buggy and usless in this system the money will be taken and received to the boss menu directly...
 
@@ -27,12 +29,12 @@ In many servers, the billing systems are always boaring and ugly or just buggy a
 
 ### Server-side:
 ```lua
-exports['krs-billing']:BillPlayer(data)
+exports['peleg-billing']:BillPlayer(data)
 ```
 
 ### Client-side:
 ```lua
-exports['krs-billing']:BillPlayer(data)
+exports['peleg-billing']:BillPlayer(data)
 ```
 
 ### Data Structure:
