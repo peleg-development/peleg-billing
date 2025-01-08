@@ -189,7 +189,7 @@ new Vue({
         scaledStyle() {
             return {
                 display: this.showbillmenu ? 'block' : 'none',
-                transform: `scale(0.99)`,
+                transform: `scale(1.0)`,
                 transformOrigin: 'center'
             }
         }
@@ -208,16 +208,7 @@ new Vue({
             if (this.view !== view) {
                 this.view = view;
                 if (this.view === 'billPlayer') {
-                    // this.fetchNearbyPlayers().then(() => {
-                    //     // if (this.nearbyPlayers.length > 0) {
-                    //     //     const randomIndex = Math.floor(Math.random() * this.nearbyPlayers.length);
-                    //     //     this.selectedPlayer = this.nearbyPlayers[randomIndex];
-                    //     // }
-                    //     // this.view = view;
-                    //     const randomIndex = Math.floor(Math.random() * this.nearbyPlayers.length);
-                    //     this.selectedPlayer = this.nearbyPlayers[randomIndex];
-                    // });
-                    // this.selectedPlayer = this.nearbyPlayers[0];
+                    this.fetchNearbyPlayers();
                 }
             }
         },
