@@ -48,6 +48,7 @@ RegisterNUICallback('krs-billing:callback:close', function(data, cb)
 end)
 
 RegisterNUICallback('krs-billing:callback:billPlayer', function(data, cb)
+    print(data.cid)
     TriggerServerEvent('krs-billing:server:billPlayer', data)
     cb("ok")
 end)
