@@ -184,7 +184,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
     local bill = MySQL.Sync.fetchAll('SELECT * FROM bills WHERE id = ?', {billId})
     if bill and bill[1] then
         foundBill = bill[1]
-        amount = tonumber(bill[1].amount) -- Ensure it's a number
+        amount = tonumber(bill[1].amount) 
         jobName = bill[1].job
     end
 
@@ -265,6 +265,25 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
             end
         end
     end
+end)
+
+RegisterNetEvent('krs-billing:server:checkBalance', function(amount)
+    local src = source
+    local hasEnough = false
+
+    if Config.Framework == "QB" then
+        local xPlayer = QBCore.Functions.GetPlayer(src)
+        if xPlayer then
+            hasEnough = xPlayer.Functions.GetMoney('cash') >= amount
+        end
+    elseif Config.Framework == "ESX" then
+        local xPlayer = ESX.GetPlayerFromId(src)
+        if xPlayer then
+            hasEnough = xPlayer.getMoney() >= amount
+        end
+    end
+
+    TriggerClientEvent('krs-billing:client:checkBalanceResponse', src, hasEnough)
 end)
 
 

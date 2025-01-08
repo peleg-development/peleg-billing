@@ -247,9 +247,9 @@ new Vue({
                 body: JSON.stringify({ billId: billId })
             }).then(response => response.json()).then(resp => {
                 if (resp === 'ok') {
-                    this.$notify({ title: 'Success', message: 'Bill refunded successfully', type: 'success' });
+                    this.notify({ title: 'Success', message: 'Bill refunded successfully', type: 'success' });
                 } else {
-                    this.$notify({ title: 'Error', message: 'Failed to refund the bill', type: 'error' });
+                    this.notify({ title: 'Error', message: 'Failed to refund the bill', type: 'error' });
                 }
             });
         },
@@ -266,24 +266,46 @@ new Vue({
         markAsPaid(billId) {
             const bill = this.myBills.find(bill => bill.id === billId);
             if (bill) {
-                fetch(`https://${GetParentResourceName()}/krs-billing:callback:payBill`, {
+                fetch(`https://${GetParentResourceName()}/krs-billing:callback:checkBalance`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        billId: billId,
-                        payFromJobAccount: false
+                        amount: bill.amount
                     })
-                }).then(response => response.json()).then(resp => {
-                    if (resp === 'ok') {
-                        bill.paid = true;
-                        this.myBills = this.myBills.filter(bill => bill.id !== billId);
-                        this.billingHistory.push(bill);
-                        this.closeDetails();
+                })
+                .then(response => response.json())
+                .then(balanceResp => {
+                    if (balanceResp.hasEnough) {
+                        fetch(`https://${GetParentResourceName()}/krs-billing:callback:payBill`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                billId: billId,
+                                payFromJobAccount: false
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(resp => {
+                            if (resp === 'ok') {
+                                bill.paid = true;
+                                this.myBills = this.myBills.filter(bill => bill.id !== billId);
+                                this.billingHistory.push(bill);
+                                this.closeDetails();
+                            } else {
+                                this.notify({ title: 'Error', message: 'Failed to pay the bill', type: 'error' });
+                            }
+                        });
                     } else {
-                        this.$notify({ title: 'Error', message: 'Failed to pay the bill', type: 'error' });
+                        this.notify({ title: 'Error', message: 'You do not have enough money to pay this bill', type: 'error' });
                     }
+                })
+                .catch(error => {
+                    console.error('Error checking balance:', error);
+                    this.notify({ title: 'Error', message: 'Could not check your balance', type: 'error' });
                 });
             }
         },
@@ -354,6 +376,22 @@ new Vue({
             this.selectedPlayer = null;
             this.selectedPlayerBills = [];
         },
+
+        notify({ title, message, type }) {
+            fetch(`https://${GetParentResourceName()}/krs-billing:callback:notify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    message: message,
+                    type: type
+                })
+            }).then(() => {
+                SetNuiFocus(false, false); 
+            });
+        }
     },
     mounted() {
         window.addEventListener('message', (event) => {

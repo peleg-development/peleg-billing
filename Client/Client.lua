@@ -10,6 +10,23 @@ elseif Config.Framework == "ESX" then
     ESX = exports["es_extended"]:getSharedObject()
 end
 
+function NotifyPlayer(message,title,  type)
+    type = type or "info" 
+
+    if Config.Notify == "qb" then
+        TriggerEvent('QBCore:Notify', message, type)
+    elseif Config.Notify == "esx" then
+        ESX.ShowNotification(message)
+    elseif Config.Notify == "okokNotify" then
+        TriggerEvent('okokNotify:Alert', title, message, 5000, type)
+    elseif Config.Notify == "peleg-notify" then
+        exports["peleg-notify"]:notify(message, title, type)
+    else
+        print(("[Notification] %s"):format(message)) 
+    end
+end
+
+
 --------------------------------------------------------------------------------
 -- NUI Handling & Callbacks
 --------------------------------------------------------------------------------
@@ -52,10 +69,26 @@ RegisterNUICallback('krs-billing:callback:billPlayer', function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback('krs-billing:callback:notify', function(data, cb)
+    NotifyPlayer(data.message, data.type)
+    cb("ok")
+end)
+
 RegisterNUICallback('krs-billing:callback:payBill', function(data, cb)
     TriggerServerEvent('krs-billing:payBill', data.billId, data.payFromJobAccount)
     cb("ok")
 end)
+
+RegisterNUICallback('krs-billing:callback:checkBalance', function(data, cb)
+    local amount = tonumber(data.amount)
+
+    TriggerServerEvent('krs-billing:server:checkBalance', amount)
+
+    RegisterNetEvent('krs-billing:client:checkBalanceResponse', function(hasEnough)
+        cb({ hasEnough = hasEnough })
+    end)
+end)
+
 
 --------------------------------------------------------------------------------
 -- Nearby Players
