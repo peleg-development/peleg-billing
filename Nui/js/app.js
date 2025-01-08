@@ -3,7 +3,7 @@ new Vue({
     data: {
         Cid: '12345',
         view: 'myBills',
-        showbillmenu: false,
+        showbillmenu: true,
         showPlayerBills: false, 
         playerSearch: '',
         billReason: '',
