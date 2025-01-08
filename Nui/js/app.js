@@ -189,7 +189,7 @@ new Vue({
         scaledStyle() {
             return {
                 display: this.showbillmenu ? 'block' : 'none',
-                transform: `scale(0.8)`,
+                transform: `scale(0.9)`,
                 transformOrigin: 'center'
             }
         }
