@@ -24,6 +24,5 @@ ui_page 'Nui/index.html'
 files {
     'Nui/index.html',
     'Nui/css/styles.css',
-    'Nui/css/menu.css',
     'Nui/js/app.js'
 }

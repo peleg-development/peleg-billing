@@ -1,5 +1,18 @@
-local QBCore = exports["qb-core"]:GetCoreObject()
+--------------------------------------------------------------------------------
+-- Initialization for QB or ESX
+--------------------------------------------------------------------------------
+local QBCore = nil
+local ESX    = nil
 
+if Config.Framework == "QB" then
+    QBCore = exports["qb-core"]:GetCoreObject()
+elseif Config.Framework == "ESX" then
+    ESX = exports["es_extended"]:getSharedObject()
+end
+
+--------------------------------------------------------------------------------
+-- NUI Handling & Callbacks
+--------------------------------------------------------------------------------
 local function OpenUi(data)
     if not data then
         print("Error: No data provided to OpenUi")
@@ -34,12 +47,14 @@ RegisterNUICallback('krs-billing:callback:close', function(data, cb)
     cb('ok')
 end)
 
-
-RegisterNUICallback('krs-billing:nui:callback:billPlayer', function (data, cb)
+RegisterNUICallback('krs-billing:nui:callback:billPlayer', function(data, cb)
     TriggerServerEvent('krs-billing:server:billPlayer', data)
     cb("ok")
 end)
 
+--------------------------------------------------------------------------------
+-- Nearby Players
+--------------------------------------------------------------------------------
 local function serializeTable(tbl)
     local status, result = pcall(function()
         return json.encode(tbl)
@@ -47,7 +62,7 @@ local function serializeTable(tbl)
     if status then
         return result
     else
-        return "{}" 
+        return "{}"
     end
 end
 
@@ -63,7 +78,6 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
             if player ~= PlayerId() then
                 local targetPed = GetPlayerPed(player)
                 local targetCoords = GetEntityCoords(targetPed)
-
                 if #(playerCoords - targetCoords) < 10.0 then 
                     local serverId = GetPlayerServerId(player)
                     table.insert(nearbyPlayers, serverId)
@@ -83,17 +97,31 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
         end
 
         for _, serverId in ipairs(nearbyPlayers) do
-            QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(response)
-                print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
-                table.insert(players, { id = serverId, name = response.name, cid = response.cid })
-                processed = processed + 1
+            if Config.Framework == "QB" then
+                QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(response)
+                    print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
+                    table.insert(players, { id = serverId, name = response.name, cid = response.cid })
+                    processed = processed + 1
 
-                if processed == totalNearby then
-                    local serializedPlayers = serializeTable(players)
-                    print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
-                    cb(players)
-                end
-            end, serverId)
+                    if processed == totalNearby then
+                        local serializedPlayers = serializeTable(players)
+                        print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
+                        cb(players)
+                    end
+                end, serverId)
+            elseif Config.Framework == "ESX" then
+                TriggerServerEvent('krs-billing:getPlayerNameServer', serverId, function(response)
+                    print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
+                    table.insert(players, { id = serverId, name = response.name, cid = response.cid })
+                    processed = processed + 1
+
+                    if processed == totalNearby then
+                        local serializedPlayers = serializeTable(players)
+                        print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
+                        cb(players)
+                    end
+                end)
+            end
         end
     end)
 
@@ -103,21 +131,46 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
     end
 end)
 
-RegisterCommand(Config.BillCommand, function()
-    local playerPed = PlayerPedId()
+--------------------------------------------------------------------------------
+-- Command or Item Usage to Open the Billing Menu
+--------------------------------------------------------------------------------
+if Config.Framework == "QB" then
+    RegisterCommand(Config.BillCommand, function()
+        local playerPed = PlayerPedId()
 
-    if not Config.BillingItem or Config.BillingItem == "" then
-        local playerData = QBCore.Functions.GetPlayerData()
-        TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
-        return
-    end
-
-    QBCore.Functions.TriggerCallback("QBCore:HasItem", function(hasItem)
-        if hasItem then
+        if not Config.BillingItem or Config.BillingItem == "" then
             local playerData = QBCore.Functions.GetPlayerData()
             TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
-        else
-            QBCore.Functions.Notify("You need a billing tablet to open the menu!", "error")
+            return
         end
-    end, Config.BillingItem) 
-end, false)
+    
+        QBCore.Functions.TriggerCallback("QBCore:HasItem", function(hasItem)
+            if hasItem then
+                local playerData = QBCore.Functions.GetPlayerData()
+                TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
+            else
+                QBCore.Functions.Notify("You need a billing tablet to open the menu!", "error")
+            end
+        end, Config.BillingItem) 
+    end, false)
+
+elseif Config.Framework == "ESX" then
+    RegisterCommand(Config.BillCommand, function()
+        local playerPed = PlayerPedId()
+
+        if not Config.BillingItem or Config.BillingItem == "" then
+            TriggerServerEvent('krs-billing:requestBillingMenu')
+            return
+        end
+
+        ESX.TriggerServerCallback("krs-billing:hasItem", function(hasItem)
+            if hasItem then
+                TriggerServerEvent('krs-billing:requestBillingMenu')
+            else
+                ESX.ShowNotification("You need a billing tablet to open the menu!", false, false, 140)
+            end
+        end, Config.BillingItem)
+    end)
+end
+
+

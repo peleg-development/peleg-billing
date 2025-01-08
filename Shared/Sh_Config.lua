@@ -1,5 +1,6 @@
 Config = {}
 
+Config.Framework = "QB" -- QB or esx
 Config.BillingItem = "" -- Define the item here  leave empty for no item
 Config.BillCommand = "bill" -- Define the command to open the billing menu
 

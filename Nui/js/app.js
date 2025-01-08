@@ -5,6 +5,9 @@ new Vue({
         view: 'myBills',
         showbillmenu: true,
         showPlayerBills: false, 
+        playerSearch: '',
+        billReason: '',
+        billAmount: 0,
         myBills: [
             {
                 id: 'bill1',
@@ -138,6 +141,25 @@ new Vue({
                 date: '2024-12-05'
             },
             {
+                id: 'selBill1',
+                amount: 100.00,
+                reason: 'Late Fee',
+                billedBy: { name: 'John Doe', job: 'Property Manager' },
+                date: '2024-12-05'
+            },       {
+                id: 'selBill1',
+                amount: 100.00,
+                reason: 'Late Fee',
+                billedBy: { name: 'John Doe', job: 'Property Manager' },
+                date: '2024-12-05'
+            },       {
+                id: 'selBill1',
+                amount: 100.00,
+                reason: 'Late Fee',
+                billedBy: { name: 'John Doe', job: 'Property Manager' },
+                date: '2024-12-05'
+            },
+            {
                 id: 'selBill2',
                 amount: 45.00,
                 reason: 'Damage Deposit',
@@ -153,9 +175,28 @@ new Vue({
                 player.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                 player.cid.toLowerCase().includes(this.searchQuery.toLowerCase())
             );
-        }
+        },
+        filteredNearByPlayers() {
+            if (!this.playerSearch) return this.nearbyPlayers;
+    
+            const filtered = this.nearbyPlayers.filter(player =>
+                player.name.toLowerCase().includes(this.playerSearch.toLowerCase()) ||
+                player.cid.toLowerCase().includes(this.playerSearch.toLowerCase())
+            );
+    
+            return filtered;
+        },
     },
     methods: {
+        selectPlayer(player) {
+            this.selectedPlayer = player;
+            this.playerSearch = '';
+            this.filteredNearByPlayers = [];
+        },
+        clearSelection() {
+            this.selectedPlayer = null;
+        },
+        
         setView(view) {
             if (this.view !== view) {
                 this.view = view;
@@ -169,30 +210,32 @@ new Vue({
                     //     const randomIndex = Math.floor(Math.random() * this.nearbyPlayers.length);
                     //     this.selectedPlayer = this.nearbyPlayers[randomIndex];
                     // });
-                    this.selectedPlayer = this.nearbyPlayers[0];
+                    // this.selectedPlayer = this.nearbyPlayers[0];
                 }
             }
         },
 
         billPlayer() {
+            if (!this.selectedPlayer || !this.billReason || !this.billAmount) {
+                return;
+            }
+        
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:billPlayer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    cid: this.Cid,
-                    reason: this.newBill.reason,
-                    amount: this.newBill.amount,
-                    targetCid: this.selectedPlayer.cid
+                    cid: this.selectedPlayer.cid,
+                    reason: this.billReason,
+                    amount: parseFloat(this.billAmount)
                 })
-            }).then(resp => resp.json()).then(resp => {
+            }).then(response => response.json())
+            .then(resp => {
                 if (resp === 'ok') {
-                    this.newBill.reason = '';
-                    this.newBill.amount = 0;
+                    this.billReason = '';
+                    this.billAmount = 0;
                     this.selectedPlayer = null;
-                } else {
-                    this.$notify({ title: 'Error', message: 'Failed to bill the player', type: 'error' });
                 }
             });
         },
@@ -302,7 +345,17 @@ new Vue({
             this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
             
             this.showPlayerBills = !!data.jobAccess; 
-        }
+        },
+        selectPlayerForInspection(player) {
+            this.selectedPlayer = player;
+            // this.fetchPlayerBills(player.cid);
+            this.showPlayerBills = true;
+        },
+        closePlayerBills() {
+            this.showPlayerBills = false;
+            this.selectedPlayer = null;
+            this.selectedPlayerBills = [];
+        },
     },
     mounted() {
         window.addEventListener('message', (event) => {
@@ -311,5 +364,6 @@ new Vue({
                 this.opentest(data);
             }
         });
-    }
+    },
+    
 });

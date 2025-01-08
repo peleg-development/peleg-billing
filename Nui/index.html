@@ -144,67 +144,103 @@
                     </div>
 
                     <!-- Bill Player View -->
-                    <div v-if="view === 'billPlayer'" class="content-section">
+                    <div v-if="view === 'billPlayer'" class="content-section bill-player-section">
                         <h2>Bill Player</h2>
-                        <div class="billing-form-container">
-                            <form @submit.prevent="billPlayer" class="billing-form">
-                                <div class="form-group">
-                                    <label>Select Player</label>
-                                    <div class="select-container">
-                                        <v-select 
-                                            v-model="selectedPlayer" 
-                                            :options="nearbyPlayers"
-                                            label="name"
-                                            :reduce="player => player"
-                                            placeholder="Choose a player..."
-                                            class="modern-select">
-                                            <template v-slot:option="option">
-                                                <div class="player-option">
-                                                    <span class="player-avatar">{{ option.name[0] }}</span>
-                                                    <div class="player-details">
-                                                        <span class="player-name">{{ option.name }}</span>
-                                                        <span class="player-cid">CID: {{ option.cid }}</span>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </v-select>
+                        
+                        <div class="bill-container">
+                            <div class="player-select-panel">
+                                <div class="search-wrapper">
+                                    <i class="fas fa-search"></i>
+                                    <input 
+                                        type="text" 
+                                        v-model="playerSearch" 
+                                        placeholder="Search players..."
+                                        class="player-search">
+                                </div>
+                                
+                                <div class="players-list">
+                                    <div v-if="loadingPlayers" class="loading-message">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        Loading nearby players...
+                                    </div>
+                                    
+                                    <div v-else-if="!nearbyPlayers.length" class="no-players-message">
+                                        <i class="fas fa-user-slash"></i>
+                                        No nearby players found
+                                    </div>
+                                    
+                                    <div v-else>
+                                        <div
+                                            v-for="player in filteredNearByPlayers"
+                                            :key="player.cid"
+                                            class="player-item"
+                                            :class="{ 'selected': selectedPlayer && selectedPlayer.cid === player.cid }"
+                                            @click="selectPlayer(player)">
+                                            <div class="player-avatar">{{ player.name[0] }}</div>
+                                            <div class="player-details">
+                                                <span class="player-name">{{ player.name }}</span>
+                                                <span class="player-cid">CID: {{ player.cid }}</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </div>                                    
                                     </div>
                                 </div>
-
-                                <div class="selected-player-card" v-if="selectedPlayer">
-                                    <div class="player-avatar">{{ selectedPlayer.name[0] }}</div>
-                                    <div class="player-info">
+                            </div>
+                    
+                            <!-- Bill Form Panel -->
+                            <div class="bill-form-panel" :class="{ 'active': selectedPlayer }">
+                                <transition name="fade-slide">
+                                <div v-if="selectedPlayer" class="selected-player-info">
+                                    <div class="player-avatar large">{{ selectedPlayer.name[0] }}</div>
+                                    <div class="player-details">
                                         <h3>{{ selectedPlayer.name }}</h3>
-                                        <p>CID: {{ selectedPlayer.cid }}</p>
+                                        <span>CID: {{ selectedPlayer.cid }}</span>
                                     </div>
                                 </div>
-
-                                <div class="form-group">
-                                    <label>Reason for Bill</label>
-                                    <input type="text" 
-                                           v-model="newBill.reason" 
-                                           placeholder="Enter reason..."
-                                           required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Amount</label>
-                                    <div class="amount-input">
-                                        <span class="currency-symbol">$</span>
-                                        <input type="number" 
-                                               v-model="newBill.amount" 
-                                               placeholder="0.00"
-                                               min="0"
-                                               step="0.01"
-                                               required>
+                            
+                                <div v-else class="no-player-selected">
+                                    <div class="placeholder-icon">
+                                        <i class="fas fa-user-circle"></i>
                                     </div>
+                                    <h3>No Player Selected</h3>
+                                    <p>Select a player from the list to create a bill.</p>
                                 </div>
-
-                                <button type="submit" class="btn-submit">
-                                    <i class="fas fa-paper-plane"></i>
-                                    Send Bill
-                                </button>
-                            </form>
+                                </transition>
+                                
+                                <div v-if="selectedPlayer" class="bill-form">
+                                    <div class="form-group">
+                                        <label>Reason for Bill</label>
+                                        <input 
+                                            type="text" 
+                                            v-model="billReason"
+                                            placeholder="Enter reason..."
+                                            class="form-input">
+                                    </div>
+                            
+                                    <div class="form-group">
+                                        <label>Amount</label>
+                                        <div class="amount-input-wrapper">
+                                            <span class="currency">$</span>
+                                            <input 
+                                                type="number"
+                                                v-model="billAmount"
+                                                placeholder="0.00"
+                                                min="0"
+                                                step="0.01"
+                                                class="form-input amount">
+                                        </div>
+                                    </div>
+                            
+                                    <button 
+                                        @click="billPlayer"
+                                        class="submit-bill-btn"
+                                        :disabled="!selectedPlayer || !billReason || !billAmount">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Send Bill
+                                    </button>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
 
@@ -220,8 +256,8 @@
                                        class="search-input">
                             </div>
                         </div>
-
-                        <div class="players-grid">
+                    
+                        <div v-if="filteredPlayers.length" class="players-grid">
                             <div v-for="player in filteredPlayers" 
                                  :key="player.cid" 
                                  class="player-card"
@@ -234,8 +270,67 @@
                                 <i class="fas fa-chevron-right arrow-icon"></i>
                             </div>
                         </div>
-                    </div>
-                </div>
+                        
+                        <div v-else class="no-results">
+                            <div class="no-results-icon">
+                                <i class="fas fa-user-slash"></i>
+                            </div>
+                            <h3>No Results Found</h3>
+                            <p>Try searching for a different name or CID.</p>
+                        </div>
+                    </div>       
+                    <transition name="fade">
+                        <div v-if="showPlayerBills" class="playerbills-overlay">
+                            <div class="playerbills-container">
+                                <!-- Header -->
+                                <div class="playerbills-header">
+                                    <h2>Bills for {{ selectedPlayer.name }}</h2>
+                                    <button @click="closePlayerBills" class="playerbills-close">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                    
+                                <!-- Body -->
+                                <div class="playerbills-body">
+                                    <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
+                                        <!-- Bill Cards -->
+                                        <div
+                                            v-for="bill in selectedPlayerBills"
+                                            :key="bill.id"
+                                            class="playerbills-card"
+                                            :class="{ unpaid: !bill.paid }"
+                                        >
+                                            <div class="playerbills-card-header">
+                                                <div class="playerbills-amount">${{ bill.amount }}</div>
+                                                <div class="playerbills-status">
+                                                    {{ bill.paid ? 'Paid' : 'Unpaid' }}
+                                                </div>
+                                            </div>
+                                            <div class="playerbills-card-body">
+                                                <p><strong>Reason:</strong> {{ bill.reason }}</p>
+                                                <p><strong>Billed By:</strong> {{ bill.billedBy.name }} ({{ bill.billedBy.job }})</p>
+                                                <p><strong>Date:</strong> {{ bill.date }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="playerbills-no-data">
+                                        <i class="fas fa-receipt"></i>
+                                        <h3>No Bills Found</h3>
+                                        <p>This player currently has no bills recorded.</p>
+                                    </div>
+                                </div>
+                    
+                                <!-- Footer -->
+                                <div class="playerbills-footer">
+                                    <button @click="closePlayerBills" class="playerbills-btn-close">
+                                        <i class="fas fa-times"></i> Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </transition>
+                    
+                        
             </div>
         </transition>
 
@@ -293,36 +388,7 @@
             </div>
         </transition>
 
-        <!-- Player Bills Modal -->
-        <transition name="fade">
-            <div v-if="showPlayerBills" class="modal-overlay">
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <h2>Bills for {{ selectedPlayer.name }}</h2>
-                        <button @click="closeUI" class="modal-close">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div v-if="selectedPlayerBills.length > 0" class="player-bills-list">
-                            <div v-for="bill in selectedPlayerBills" 
-                                 :key="bill.id" 
-                                 class="player-bill-item">
-                                <div class="bill-amount">${{ bill.amount }}</div>
-                                <div class="bill-info">
-                                    <p class="biller">{{ bill.billedBy.name }}</p>
-                                    <p class="job">{{ bill.billedBy.job }}</p>
-                                    <p class="date">{{ bill.date }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="no-bills-message">
-                            No bills found for this player.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
+
     </div>
 
     <script src="https://unpkg.com/vue-select@latest"></script>
