@@ -61,7 +61,6 @@ body {
 #app {
     width: 1324px;
     height: 768px;
-    scale: 0.8;
     background: var(--color-background-dark);
     border-radius: 20px;
     overflow: hidden;
@@ -452,6 +451,7 @@ body {
 
 .bill-form .form-group .amount-input-wrapper {
     position: relative;
+    color: white;
 }
 
 .bill-form .form-group .amount-input-wrapper .currency {
@@ -459,7 +459,7 @@ body {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--color-text-secondary);
+    color: white;
 }
 
 .submit-bill-btn {
