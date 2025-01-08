@@ -291,6 +291,7 @@ new Vue({
                         .then(response => response.json())
                         .then(resp => {
                             if (resp === 'ok') {
+                                this.notify({ title: 'Success', message: 'Paid Bill', type: 'success' });
                                 bill.paid = true;
                                 this.myBills = this.myBills.filter(bill => bill.id !== billId);
                                 this.billingHistory.push(bill);
