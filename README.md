@@ -49,6 +49,13 @@ data = {
 
 
 ### Preview
-new ui still not finished
-![image](https://github.com/user-attachments/assets/e433234d-a4a3-4495-ae98-62f9c3b2bd74)
+![image](https://github.com/user-attachments/assets/375bfedb-1e8c-470f-a7ee-d0dadbddbe1c)
+![image](https://github.com/user-attachments/assets/b09a3e71-4436-4c64-bb38-fa03626ea38f)
+![image](https://github.com/user-attachments/assets/73fcf9b9-6ca2-46c7-a274-d82353180d6c)
+![image](https://github.com/user-attachments/assets/9ded02a7-4d04-4413-910c-50d79de9fda9)
+![image](https://github.com/user-attachments/assets/779313d1-1202-4ca4-ac96-fe6ea224308f)
+![image](https://github.com/user-attachments/assets/77468abf-1d5f-4143-8c89-17d86ef4803e)
+![image](https://github.com/user-attachments/assets/c427789a-dbd5-4498-9bf4-91601e3c4e77)
+![image](https://github.com/user-attachments/assets/4c7f5e7f-6362-405d-a99e-bbe395491492)
+![image](https://github.com/user-attachments/assets/ba7bc85d-c1b7-4a95-98a7-5d2249b45a79)
 
