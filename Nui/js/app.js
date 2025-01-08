@@ -186,7 +186,7 @@ new Vue({
     
             return filtered;
         },
-        scaleStyle() {
+        scaledStyle() {
             return {
                 display: this.showbillmenu ? 'block' : 'none',
                 transform: `scale(0.8)`,
