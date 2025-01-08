@@ -60,7 +60,7 @@ body {
 /* App Container */
 #app {
     width: 80%;
-    max-width: 800px;
+    max-width: 900px;
     height: 90%;
     max-height: 1200px;
     background: var(--color-background-dark);
