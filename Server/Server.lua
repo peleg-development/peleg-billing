@@ -110,12 +110,28 @@ function GetSocietyBills(job)
     return societyBills
 end
 
+
+function GetCid(player) 
+    local cid = nil
+    if Config.Framework == "QB" then
+        local Player = QBCore.Functions.GetPlayer(player)
+        if Player then
+            cid = Player.PlayerData.citizenid
+        end
+    elseif Config.Framework == "ESX" then
+        local xPlayer = ESX.GetPlayerFromId(player)
+        if xPlayer then
+            cid = xPlayer.identifier
+        end
+    end
+    return cid
+end
 --------------------------------------------------------------------------------
 -- Billing Logic
 --------------------------------------------------------------------------------
 RegisterNetEvent("krs-billing:server:billPlayer", function(data)
-    local cid       = data.cid
-    local targetCid = data.targetCid
+    local cid       = GetCid(source)
+    local targetCid = data.cid
     local reason    = data.reason
     local amount    = data.amount
 
