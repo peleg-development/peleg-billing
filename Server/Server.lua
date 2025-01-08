@@ -56,6 +56,7 @@ function GetPlayerBills(cid)
             amount = bill.amount,
             reason = bill.reason,
             sender = senderName,
+            billedBy = { name = senderName, cid = bill.sender_cid },
             receiver = receiverName,
             job = receiverJob.name,
             date = bill.date,
