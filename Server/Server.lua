@@ -186,8 +186,6 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
         foundBill = bill[1]
         amount = tonumber(bill[1].amount) -- Ensure it's a number
         jobName = bill[1].job
-        senderJob = bill[1].sender_job
-        senderName = bill[1].sender
     end
 
     if not foundBill then
@@ -203,7 +201,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
         local xPlayer = QBCore.Functions.GetPlayer(src)
         if payFromJobAccount then
             if xPlayer.PlayerData.job.isboss then
-                TriggerEvent('qb-bossmenu:server:addAccountMoney', senderJob, amount, function(success)
+                TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount, function(success)
                     if success then
                         MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
                         TriggerClientEvent('QBCore:Notify', src, 'Bill paid from job account and credited to sender society', 'success')
@@ -217,7 +215,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
             end
         else
             if xPlayer.Functions.RemoveMoney('cash', amount) then
-                TriggerEvent('qb-bossmenu:server:addAccountMoney', senderJob, amount, function(success)
+                TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount, function(success)
                     if success then
                         MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
                         TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
@@ -236,7 +234,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
         local xPlayerJob = xPlayer.job
         if payFromJobAccount then
             if xPlayerJob.grade_name == "boss" then
-                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. senderJob, function(account)
+                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
                     if account then
                         account.addMoney(amount)
                         MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
@@ -252,7 +250,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
         else
             if xPlayer.getMoney() >= amount then
                 xPlayer.removeMoney(amount)
-                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. senderJob, function(account)
+                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
                     if account then
                         account.addMoney(amount)
                         MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
