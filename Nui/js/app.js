@@ -186,6 +186,13 @@ new Vue({
     
             return filtered;
         },
+        scaleStyle() {
+            return {
+                display: this.showbillmenu ? 'block' : 'none',
+                transform: `scale(0.8)`,
+                transformOrigin: 'center'
+            }
+        }
     },
     methods: {
         selectPlayer(player) {
