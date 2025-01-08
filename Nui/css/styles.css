@@ -49,7 +49,7 @@
 }
 
 body {
-    background-color: var(--color-background);
+    /* background-color: var(--color-background); */
     color: var(--color-text);
     display: flex;
     justify-content: center;
