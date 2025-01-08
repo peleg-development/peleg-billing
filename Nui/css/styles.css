@@ -61,7 +61,7 @@ body {
 #app {
     width: 1324px;
     height: 768px;
-    background: var(--color-background-dark);
+    /* background: var(--color-background-dark); */
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 0 40px var(--color-shadow);
