@@ -59,10 +59,9 @@ body {
 
 /* App Container */
 #app {
-    width: 80%;
-    max-width: 900px;
-    height: 90%;
-    max-height: 1200px;
+    width: 1324px;
+    height: 768px;
+    transform: scale(0.8);
     background: var(--color-background-dark);
     border-radius: 20px;
     overflow: hidden;
