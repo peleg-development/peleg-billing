@@ -1,398 +1,511 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Billing System</title>
-    
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peleg Billing</title>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
 </head>
+
 <body>
     <div id="app" :style="scaledStyle">
         <transition name="slide-fade">
-            <div v-if="showbillmenu" class="dashboard"> 
-                <div class="sidebar">
-                    <div class="logo">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>BillHub</span>
+            <div v-if="showbillmenu" class="dashboard">
+        </transition> 
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>{{ Locale.get('billHub', 'Bills') }}</span>
+            </div>
+
+            <nav class="nav-menu">
+                <button @click="setView('myBills')" class="nav-item" :class="{ active: view === 'myBills' }">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>{{ Locale.get('myBillsLabel', 'My Bills') }}</span>
+                </button>
+
+                <button @click="setView('billingHistory')" class="nav-item"
+                    :class="{ active: view === 'billingHistory' }">
+                    <i class="fas fa-history"></i>
+                    <span>{{ Locale.get('historyLabel', 'History') }}</span>
+                </button>
+
+                <button @click="setView('societyBills')" class="nav-item" :class="{ active: view === 'societyBills' }">
+                    <i class="fas fa-building"></i>
+                    <span>{{ Locale.get('societyLabel', 'Society') }}</span>
+                </button>
+
+                <button @click="setView('billPlayer')" class="nav-item" :class="{ active: view === 'billPlayer' }">
+                    <i class="fas fa-user-plus"></i>
+                    <span>{{ Locale.get('billPlayerLabel', 'Bill Player') }}</span>
+                </button>
+
+                <button @click="setView('inspectCitizen')" class="nav-item"
+                    :class="{ active: view === 'inspectCitizen' }">
+                    <i class="fas fa-search"></i>
+                    <span>{{ Locale.get('inspectLabel', 'Inspect') }}</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div v-if="view === 'myBills'" class="content-section">
+                <h2>{{ Locale.get('myBillsHeading', 'My Bills') }}</h2>
+                <div v-if="myBills.length === 0" class="no-data-message">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>{{ Locale.get('noBillsAvailable', 'No Bills Available') }}</h3>
+                    <p>
+                        {{
+                        Locale.get(
+                        'noBillsAvailableDescription',
+                        'You currently don\'t have any bills. Check back later!'
+                        )
+                        }}
+                    </p>
+                </div>
+                <div v-else class="bills-grid">
+                    <div v-for="bill in myBills" :key="bill.id" class="bill-card" :class="{ paid: bill.paid }">
+                        <div class="bill-card-header">
+                            <div class="amount">
+                                {{
+                                Locale.get('currencySymbol', '$')
+                                }}{{ bill.amount }}
+                            </div>
+                            <div class="status-badge" :class="bill.paid ? 'paid' : 'pending'">
+                                {{ bill.paid ? Locale.get('paidStatus', 'Paid') : Locale.get('pendingStatus', 'Pending')
+                                }}
+                            </div>
+                        </div>
+                        <div class="bill-card-body">
+                            <p class="reason">{{ bill.reason }}</p>
+                            <p class="sender">
+                                {{ Locale.get('fromLabel', 'From:') }}
+                                {{ bill.sender }}
+                            </p>
+                            <p class="biller">
+                                {{ Locale.get('byLabel', 'By:') }}
+                                {{ bill.billedBy.name }}
+                            </p>
+                            <p class="date">
+                                {{ bill.date }} | {{ bill.time }}
+                            </p>
+                        </div>
+                        <div class="bill-card-footer">
+                            <button @click="showDetails(bill)" class="btn-details">
+                                <i class="fas" :class="bill.paid ? 'fa-check-circle' : 'fa-info-circle'"></i>
+                                {{
+                                bill.paid
+                                ? Locale.get('viewReceipt', 'View Receipt')
+                                : Locale.get('viewDetails', 'View Details')
+                                }}
+                            </button>
+                        </div>
                     </div>
-                    
-                    <nav class="nav-menu">
-                        <button @click="setView('myBills')" 
-                                class="nav-item" 
-                                :class="{ active: view === 'myBills' }">
-                            <i class="fas fa-file-invoice"></i>
-                            <span>My Bills</span>
-                        </button>
-                        
-                        <button @click="setView('billingHistory')" 
-                                class="nav-item"
-                                :class="{ active: view === 'billingHistory' }">
-                            <i class="fas fa-history"></i>
-                            <span>History</span>
-                        </button>
-                        
-                        <button @click="setView('societyBills')" 
-                                class="nav-item"
-                                :class="{ active: view === 'societyBills' }">
-                            <i class="fas fa-building"></i>
-                            <span>Society</span>
-                        </button>
-                        
-                        <button @click="setView('billPlayer')" 
-                                class="nav-item"
-                                :class="{ active: view === 'billPlayer' }">
-                            <i class="fas fa-user-plus"></i>
-                            <span>Bill Player</span>
-                        </button>
-                        
-                        <button @click="setView('inspectCitizen')" 
-                                class="nav-item"
-                                :class="{ active: view === 'inspectCitizen' }">
+                </div>
+            </div>
+
+            <!-- Billing History View -->
+            <div v-if="view === 'billingHistory'" class="content-section">
+                <h2>{{ Locale.get('billingHistoryHeading', 'Billing History') }}</h2>
+                <div v-if="billingHistory.length === 0" class="no-data-message">
+                    <i class="fas fa-clock"></i>
+                    <h3>{{ Locale.get('noBillingHistory', 'No Billing History') }}</h3>
+                    <p>
+                        {{
+                        Locale.get(
+                        'emptyHistoryDescription',
+                        'Your billing history is currently empty. Complete some transactions to see your history here.'
+                        )
+                        }}
+                    </p>
+                </div>
+                <div v-else class="bills-grid">
+                    <div v-for="bill in billingHistory" :key="bill.id" class="bill-card history">
+                        <div class="bill-card-header">
+                            <div class="amount">
+                                {{
+                                Locale.get('currencySymbol', '$')
+                                }}{{ bill.amount }}
+                            </div>
+                            <div class="date-badge">{{ bill.date }}</div>
+                        </div>
+                        <div class="bill-card-body">
+                            <p class="reason">{{ bill.reason }}</p>
+                            <p class="sender">
+                                {{ Locale.get('fromLabel', 'From:') }}
+                                {{ bill.sender }}
+                            </p>
+                            <p class="biller">
+                                {{ Locale.get('byLabel', 'By:') }}
+                                {{ bill.billedBy.name }}
+                            </p>
+                            <p class="time">{{ bill.time }}</p>
+                        </div>
+                        <div class="bill-card-footer">
+                            <button @click="showDetails(bill)" class="btn-details">
+                                <i class="fas fa-receipt"></i>
+                                {{ Locale.get('viewReceipt', 'View Receipt') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Society Bills View -->
+            <div v-if="view === 'societyBills'" class="content-section">
+                <h2>{{ Locale.get('societyBillsHeading', 'Society Bills') }}</h2>
+                <div v-if="societyBills.length === 0" class="no-data-message">
+                    <i class="fas fa-building"></i>
+                    <h3>{{ Locale.get('noSocietyBills', 'No Society Bills') }}</h3>
+                    <p>
+                        {{
+                        Locale.get(
+                        'noSocietyBillsDescription',
+                        'There are currently no society bills available. Check again later!'
+                        )
+                        }}
+                    </p>
+                </div>
+                <div v-else class="bills-grid">
+                    <div v-for="bill in societyBills" :key="bill.id" class="bill-card society">
+                        <div class="bill-card-header">
+                            <div class="amount">
+                                {{
+                                Locale.get('currencySymbol', '$')
+                                }}{{ bill.amount }}
+                            </div>
+                            <div class="date-badge">{{ bill.date }}</div>
+                        </div>
+                        <div class="bill-card-body">
+                            <p class="reason">{{ bill.reason }}</p>
+                            <p class="sender">
+                                {{ Locale.get('fromLabel', 'From:') }}
+                                {{ bill.sender }}
+                            </p>
+                            <p class="biller">
+                                {{ Locale.get('byLabel', 'By:') }}
+                                {{ bill.billedBy.name }}
+                            </p>
+                            <p class="time">{{ bill.time }}</p>
+                        </div>
+                        <div class="bill-card-footer">
+                            <button @click="refundBill(bill.id)" class="btn-refund">
+                                <i class="fas fa-undo-alt"></i>
+                                {{ Locale.get('refundBill', 'Refund Bill') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bill Player View -->
+            <div v-if="view === 'billPlayer'" class="content-section bill-player-section">
+                <h2>{{ Locale.get('billPlayerHeading', 'Bill Player') }}</h2>
+
+                <div class="bill-container">
+                    <!-- Player Select Panel -->
+                    <div class="player-select-panel">
+                        <div class="search-wrapper">
                             <i class="fas fa-search"></i>
-                            <span>Inspect</span>
-                        </button>
-                    </nav>
-                </div>
+                            <input type="text" v-model="playerSearch"
+                                :placeholder="Locale.get('searchPlayersPlaceholder','Search players...')"
+                                class="player-search" />
+                        </div>
 
-                <!-- Main Content Area -->
-                <div class="main-content">
-                    <!-- My Bills View -->
-                    <div v-if="view === 'myBills'" class="content-section">
-                        <h2>My Bills</h2>
-                        <div class="bills-grid">
-                            <div v-for="bill in myBills" 
-                                 :key="bill.id" 
-                                 class="bill-card"
-                                 :class="{ 'paid': bill.paid }">
-                                <div class="bill-card-header">
-                                    <div class="amount">${{ bill.amount }}</div>
-                                    <div class="status-badge" :class="bill.paid ? 'paid' : 'pending'">
-                                        {{ bill.paid ? 'Paid' : 'Pending' }}
-                                    </div>
-                                </div>
-                                <div class="bill-card-body">
-                                    <p class="reason">{{ bill.reason }}</p>
-                                    <p class="sender">From: {{ bill.sender }}</p>
-                                    <p class="biller">By: {{ bill.billedBy.name }}</p>
-                                    <p class="date">{{ bill.date }} | {{ bill.time }}</p>
-                                </div>
-                                <div class="bill-card-footer">
-                                    <button @click="showDetails(bill)" class="btn-details">
-                                        <i class="fas" :class="bill.paid ? 'fa-check-circle' : 'fa-info-circle'"></i>
-                                        {{ bill.paid ? 'View Receipt' : 'View Details' }}
-                                    </button>
-                                </div>
+                        <div class="players-list">
+                            <div v-if="loadingPlayers" class="loading-message">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                {{ Locale.get('loadingNearbyPlayers', 'Loading nearby players...') }}
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Billing History View -->
-                    <div v-if="view === 'billingHistory'" class="content-section">
-                        <h2>Billing History</h2>
-                        <div class="bills-grid">
-                            <div v-for="bill in billingHistory" 
-                                 :key="bill.id" 
-                                 class="bill-card history">
-                                <div class="bill-card-header">
-                                    <div class="amount">${{ bill.amount }}</div>
-                                    <div class="date-badge">{{ bill.date }}</div>
-                                </div>
-                                <div class="bill-card-body">
-                                    <p class="reason">{{ bill.reason }}</p>
-                                    <p class="sender">From: {{ bill.sender }}</p>
-                                    <p class="biller">By: {{ bill.billedBy.name }}</p>
-                                    <p class="time">{{ bill.time }}</p>
-                                </div>
-                                <div class="bill-card-footer">
-                                    <button @click="showDetails(bill)" class="btn-details">
-                                        <i class="fas fa-receipt"></i>
-                                        View Receipt
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Society Bills View -->
-                    <div v-if="view === 'societyBills'" class="content-section">
-                        <h2>Society Bills</h2>
-                        <div class="bills-grid">
-                            <div v-for="bill in societyBills" 
-                                 :key="bill.id" 
-                                 class="bill-card society">
-                                <div class="bill-card-header">
-                                    <div class="amount">${{ bill.amount }}</div>
-                                    <div class="date-badge">{{ bill.date }}</div>
-                                </div>
-                                <div class="bill-card-body">
-                                    <p class="reason">{{ bill.reason }}</p>
-                                    <p class="sender">From: {{ bill.sender }}</p>
-                                    <p class="biller">By: {{ bill.billedBy.name }}</p>
-                                    <p class="time">{{ bill.time }}</p>
-                                </div>
-                                <div class="bill-card-footer">
-                                    <button @click="refundBill(bill.id)" class="btn-refund">
-                                        <i class="fas fa-undo-alt"></i>
-                                        Refund Bill
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bill Player View -->
-                    <div v-if="view === 'billPlayer'" class="content-section bill-player-section">
-                        <h2>Bill Player</h2>
-                        
-                        <div class="bill-container">
-                            <div class="player-select-panel">
-                                <div class="search-wrapper">
-                                    <i class="fas fa-search"></i>
-                                    <input 
-                                        type="text" 
-                                        v-model="playerSearch" 
-                                        placeholder="Search players..."
-                                        class="player-search">
-                                </div>
-                                
-                                <div class="players-list">
-                                    <div v-if="loadingPlayers" class="loading-message">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        Loading nearby players...
-                                    </div>
-                                    
-                                    <div v-else-if="!nearbyPlayers.length" class="no-players-message">
-                                        <i class="fas fa-user-slash"></i>
-                                        No nearby players found
-                                    </div>
-                                    
-                                    <div v-else>
-                                        <div
-                                            v-for="player in filteredNearByPlayers"
-                                            :key="player.cid"
-                                            class="player-item"
-                                            :class="{ 'selected': selectedPlayer && selectedPlayer.cid === player.cid }"
-                                            @click="selectPlayer(player)">
-                                            <div class="player-avatar">{{ player.name[0] }}</div>
-                                            <div class="player-details">
-                                                <span class="player-name">{{ player.name }}</span>
-                                                <span class="player-cid">CID: {{ player.cid }}</span>
-                                            </div>
-                                            <i class="fas fa-chevron-right"></i>
-                                        </div>                                    
-                                    </div>
-                                </div>
-                            </div>
-                    
-                            <!-- Bill Form Panel -->
-                            <div class="bill-form-panel" :class="{ 'active': selectedPlayer }">
-                                <transition name="fade-slide">
-                                <div v-if="selectedPlayer" class="selected-player-info">
-                                    <div class="player-avatar large">{{ selectedPlayer.name[0] }}</div>
-                                    <div class="player-details">
-                                        <h3>{{ selectedPlayer.name }}</h3>
-                                        <span>CID: {{ selectedPlayer.cid }}</span>
-                                    </div>
-                                </div>
-                            
-                                <div v-else class="no-player-selected">
-                                    <div class="placeholder-icon">
-                                        <i class="fas fa-user-circle"></i>
-                                    </div>
-                                    <h3>No Player Selected</h3>
-                                    <p>Select a player from the list to create a bill.</p>
-                                </div>
-                                </transition>
-                                
-                                <div v-if="selectedPlayer" class="bill-form">
-                                    <div class="form-group">
-                                        <label>Reason for Bill</label>
-                                        <input 
-                                            type="text" 
-                                            v-model="billReason"
-                                            placeholder="Enter reason..."
-                                            class="form-input">
-                                    </div>
-                            
-                                    <div class="form-group">
-                                        <label>Amount</label>
-                                        <div class="amount-input-wrapper">
-                                            <span class="currency">$</span>
-                                            <input 
-                                                type="number"
-                                                v-model="billAmount"
-                                                placeholder="0.00"
-                                                min="0"
-                                                step="0.01"
-                                                class="form-input amount">
-                                        </div>
-                                    </div>
-                            
-                                    <button 
-                                        @click="billPlayer"
-                                        class="submit-bill-btn"
-                                        :disabled="!selectedPlayer || !billReason || !billAmount">
-                                        <i class="fas fa-paper-plane"></i>
-                                        Send Bill
-                                    </button>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-
-                    <!-- Inspect Citizen View -->
-                    <div v-if="view === 'inspectCitizen'" class="content-section">
-                        <h2>Inspect Citizen</h2>
-                        <div class="search-section">
-                            <div class="search-container">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" 
-                                       v-model="searchQuery" 
-                                       placeholder="Search by name or CID..."
-                                       class="search-input">
-                            </div>
-                        </div>
-                    
-                        <div v-if="filteredPlayers.length" class="players-grid">
-                            <div v-for="player in filteredPlayers" 
-                                 :key="player.cid" 
-                                 class="player-card"
-                                 @click="selectPlayerForInspection(player)">
-                                <div class="player-card-avatar">{{ player.name[0] }}</div>
-                                <div class="player-card-info">
-                                    <h3>{{ player.name }}</h3>
-                                    <p>CID: {{ player.cid }}</p>
-                                </div>
-                                <i class="fas fa-chevron-right arrow-icon"></i>
-                            </div>
-                        </div>
-                        
-                        <div v-else class="no-results">
-                            <div class="no-results-icon">
+                            <div v-else-if="!nearbyPlayers.length" class="no-players-message">
                                 <i class="fas fa-user-slash"></i>
+                                {{ Locale.get('noNearbyPlayersFound', 'No nearby players found') }}
                             </div>
-                            <h3>No Results Found</h3>
-                            <p>Try searching for a different name or CID.</p>
-                        </div>
-                    </div>       
-                    <transition name="fade">
-                        <div v-if="showPlayerBills" class="playerbills-overlay">
-                            <div class="playerbills-container">
-                                <!-- Header -->
-                                <div class="playerbills-header">
-                                    <h2>Bills for {{ selectedPlayer.name }}</h2>
-                                    <button @click="closePlayerBills" class="playerbills-close">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                    
-                                <!-- Body -->
-                                <div class="playerbills-body">
-                                    <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
-                                        <!-- Bill Cards -->
-                                        <div
-                                            v-for="bill in selectedPlayerBills"
-                                            :key="bill.id"
-                                            class="playerbills-card"
-                                            :class="{ unpaid: !bill.paid }"
-                                        >
-                                            <div class="playerbills-card-header">
-                                                <div class="playerbills-amount">${{ bill.amount }}</div>
-                                                <div class="playerbills-status">
-                                                    {{ bill.paid ? 'Paid' : 'Unpaid' }}
-                                                </div>
-                                            </div>
-                                            <div class="playerbills-card-body">
-                                                <p><strong>Reason:</strong> {{ bill.reason }}</p>
-                                                <p><strong>Billed By:</strong> {{ bill.billedBy.name }} ({{ bill.billedBy.job }})</p>
-                                                <p><strong>Date:</strong> {{ bill.date }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div v-else class="playerbills-no-data">
-                                        <i class="fas fa-receipt"></i>
-                                        <h3>No Bills Found</h3>
-                                        <p>This player currently has no bills recorded.</p>
-                                    </div>
-                                </div>
-                    
-                                <!-- Footer -->
-                                <div class="playerbills-footer">
-                                    <button @click="closePlayerBills" class="playerbills-btn-close">
-                                        <i class="fas fa-times"></i> Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </transition>
-                    
-                        
-            </div>
-        </transition>
 
-        <!-- Bill Details Modal -->
-        <transition name="fade">
-            <div v-if="showBillDetails" class="modal-overlay">
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <h2>Bill Details</h2>
-                        <button @click="closeDetails" class="modal-close">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Amount:</span>
-                            <span class="detail-value">${{ selectedBill.amount }}</span>
-                        </div>
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Reason:</span>
-                            <span class="detail-value">{{ selectedBill.reason }}</span>
-                        </div>
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Sent by:</span>
-                            <span class="detail-value">{{ selectedBill.sender }}</span>
-                        </div>
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Billed by:</span>
-                            <span class="detail-value">{{ selectedBill.billedBy.name }} ({{ selectedBill.billedBy.job }})</span>
-                        </div>
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Date:</span>
-                            <span class="detail-value">{{ selectedBill.date }} | {{ selectedBill.time }}</span>
-                        </div>
-                        <div class="bill-detail-item">
-                            <span class="detail-label">Status:</span>
-                            <span class="detail-value" :class="{ 'status-paid': selectedBill.paid }">
-                                {{ selectedBill.paid ? 'Paid' : 'Pending' }}
-                            </span>
+                            <div v-else>
+                                <div v-for="player in filteredNearByPlayers" :key="player.cid" class="player-item"
+                                    :class="{
+                        selected:
+                          selectedPlayer && selectedPlayer.cid === player.cid,
+                      }" @click="selectPlayer(player)">
+                                    <div class="player-avatar">{{ player.name[0] }}</div>
+                                    <div class="player-details">
+                                        <span class="player-name">{{ player.name }}</span>
+                                        <span class="player-cid">
+                                            CID: {{ player.cid }}
+                                        </span>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button v-if="!selectedBill.paid" 
-                                @click="markAsPaid(selectedBill.id)" 
-                                class="btn-pay">
-                            <i class="fas fa-check"></i>
-                            Mark as Paid
-                        </button>
-                        <button @click="closeDetails" class="btn-close">
-                            <i class="fas fa-times"></i>
-                            Close
-                        </button>
+
+                    <!-- Bill Form Panel -->
+                    <div class="bill-form-panel" :class="{ active: selectedPlayer }">
+                        <transition name="fade-slide">
+                            <div v-if="selectedPlayer" class="selected-player-info">
+                                <div class="player-avatar large">
+                                    {{ selectedPlayer.name[0] }}
+                                </div>
+                                <div class="player-details">
+                                    <h3>{{ selectedPlayer.name }}</h3>
+                                    <span>CID: {{ selectedPlayer.cid }}</span>
+                                </div>
+                            </div>
+
+                            <div v-else class="no-player-selected">
+                                <div class="placeholder-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <h3>{{ Locale.get('noPlayerSelected','No Player Selected') }}</h3>
+                                <p>
+                                    {{
+                                    Locale.get(
+                                    'selectPlayerPrompt',
+                                    'Select a player from the list to create a bill.'
+                                    )
+                                    }}
+                                </p>
+                            </div>
+                        </transition>
+
+                        <div v-if="selectedPlayer" class="bill-form">
+                            <div class="form-group">
+                                <label>{{ Locale.get('reasonForBill','Reason for Bill') }}</label>
+                                <input type="text" v-model="billReason"
+                                    :placeholder="Locale.get('enterReasonPlaceholder','Enter reason...')"
+                                    class="form-input" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>{{ Locale.get('amountLabel','Amount') }}</label>
+                                <div class="amount-input-wrapper">
+                                    <span class="currency">
+                                        {{ Locale.get('currencySymbol','$') }}
+                                    </span>
+                                    <input type="number" v-model="billAmount"
+                                        :placeholder="Locale.get('enterAmountPlaceholder','0.00')" min="0" step="0.01"
+                                        class="form-input amount" />
+                                </div>
+                            </div>
+
+                            <button @click="billPlayer" class="submit-bill-btn"
+                                :disabled="!selectedPlayer || !billReason || !billAmount">
+                                <i class="fas fa-paper-plane"></i>
+                                {{ Locale.get('sendBill','Send Bill') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </transition>
 
+            <!-- Inspect Citizen View -->
+            <div v-if="view === 'inspectCitizen'" class="content-section">
+                <h2>{{ Locale.get('inspectCitizenHeading','Inspect Citizen') }}</h2>
+                <div class="search-section">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" v-model="searchQuery"
+                            :placeholder="Locale.get('searchByNameOrCid','Search by name or CID...')"
+                            class="search-input" />
+                    </div>
+                </div>
 
+                <div v-if="filteredPlayers.length" class="players-grid">
+                    <div v-for="player in filteredPlayers" :key="player.cid" class="player-card"
+                        @click="selectPlayerForInspection(player)">
+                        <div class="player-card-avatar">{{ player.name[0] }}</div>
+                        <div class="player-card-info">
+                            <h3>{{ player.name }}</h3>
+                            <p>CID: {{ player.cid }}</p>
+                        </div>
+                        <i class="fas fa-chevron-right arrow-icon"></i>
+                    </div>
+                </div>
+
+                <div v-else class="no-results">
+                    <div class="no-results-icon">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                    <h3>{{ Locale.get('noResultsFound','No Results Found') }}</h3>
+                    <p>
+                        {{
+                        Locale.get(
+                        'trySearchingDifferentName',
+                        'Try searching for a different name or CID.'
+                        )
+                        }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Player Bills Overlay -->
+            <transition name="fade">
+                <div v-if="showPlayerBills" class="playerbills-overlay">
+                    <div class="playerbills-container">
+                        <div class="playerbills-header">
+                            <h2>
+                                {{
+                                Locale.get('billsFor','Bills for')
+                                }} {{ selectedPlayer.name }}
+                            </h2>
+                            <button @click="closePlayerBills" class="playerbills-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="playerbills-body">
+                            <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
+                                <div v-for="bill in selectedPlayerBills" :key="bill.id" class="playerbills-card"
+                                    :class="{ unpaid: !bill.paid }">
+                                    <div class="playerbills-card-header">
+                                        <div class="playerbills-amount">
+                                            {{
+                                            Locale.get('currencySymbol','$')
+                                            }}{{ bill.amount }}
+                                        </div>
+                                        <div class="playerbills-status">
+                                            {{ bill.paid ? Locale.get('paidStatus','Paid') :
+                                            Locale.get('unpaidStatus','Unpaid') }}
+                                        </div>
+                                    </div>
+                                    <div class="playerbills-card-body">
+                                        <p>
+                                            <strong>{{ Locale.get('reasonLabel','Reason:') }}</strong>
+                                            {{ bill.reason }}
+                                        </p>
+                                        <p>
+                                            <strong>{{ Locale.get('billedByLabel','Billed By:') }}</strong>
+                                            {{ bill.billedBy.name }} ({{ bill.billedBy.job }})
+                                        </p>
+                                        <p>
+                                            <strong>{{ Locale.get('dateLabel','Date:') }}</strong>
+                                            {{ bill.date }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else class="playerbills-no-data">
+                                <i class="fas fa-receipt"></i>
+                                <h3>{{ Locale.get('noBillsFound','No Bills Found') }}</h3>
+                                <p>
+                                    {{
+                                    Locale.get(
+                                    'noPlayerBillsRecorded',
+                                    'This player currently has no bills recorded.'
+                                    )
+                                    }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="playerbills-footer">
+                            <button @click="closePlayerBills" class="playerbills-btn-close">
+                                <i class="fas fa-times"></i>
+                                {{ Locale.get('closeButton','Close') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </div>
+    </transition>
+
+    <!-- Bill Details Modal -->
+    <transition name="fade">
+        <div v-if="showBillDetails" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2>{{ Locale.get('billDetailsHeading','Bill Details') }}</h2>
+                    <button @click="closeDetails" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('amountLabel','Amount:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{
+                            Locale.get('currencySymbol','$')
+                            }}{{ selectedBill.amount }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('reasonLabel','Reason:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.reason }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('sentByLabel','Sent by:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.sender }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('billedByLabel','Billed by:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.billedBy.name }}
+                            ({{ selectedBill.billedBy.job }})
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('dateLabel','Date:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.date }} | {{ selectedBill.time }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('statusLabel','Status:') }}
+                        </span>
+                        <span class="detail-value" :class="{ 'status-paid': selectedBill.paid }">
+                            {{
+                            selectedBill.paid
+                            ? Locale.get('paidStatus','Paid')
+                            : Locale.get('pendingStatus','Pending')
+                            }}
+                        </span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button v-if="!selectedBill.paid" @click="markAsPaid(selectedBill.id)" class="btn-pay">
+                        <i class="fas fa-check"></i>
+                        {{ Locale.get('markAsPaidButton','Mark as Paid') }}
+                    </button>
+                    <button @click="closeDetails" class="btn-close">
+                        <i class="fas fa-times"></i>
+                        {{ Locale.get('closeButton','Close') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
     </div>
 
     <script src="https://unpkg.com/vue-select@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

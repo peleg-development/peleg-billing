@@ -1257,3 +1257,26 @@ body {
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+.no-data-message {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-text-secondary);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.no-data-message i {
+    font-size: 4rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+}
+
+.no-data-message h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.no-data-message p {
+    font-size: 1rem;
+}

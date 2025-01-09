@@ -1,3 +1,16 @@
+const Locale = {
+    values: {},
+
+    setLocale(newLocale) {
+        this.values = newLocale;
+        console.log('[Locale] Locale updated:', this.values);
+    },
+
+    get(key, defaultValue = '') {
+        return this.values[key] || defaultValue;
+    }
+};
+
 new Vue({
     el: '#app',
     data: {
@@ -195,6 +208,7 @@ new Vue({
         }
     },
     methods: {
+        
         selectPlayer(player) {
             this.selectedPlayer = player;
             this.playerSearch = '';
@@ -333,11 +347,13 @@ new Vue({
                             console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}, CID = ${player.cid}`);
                         });
                     } else {
-                        console.log('[peleg-billing] No nearby players found.');
+                        this.notify({ title: 'Error', message: 'No nearby players found', type: 'error' });
                     }
 
                     this.nearbyPlayers = players;
-                    this.loadingPlayers = false;
+                    setTimeout(() => {
+                        this.loadingPlayers = false;
+                    }, 500); 
                 })
                 .catch(error => {
                     console.error('Error fetching nearby players:', error);
@@ -361,11 +377,15 @@ new Vue({
         opentest(data) {
             this.Cid = data.cid || null; 
             this.myBills = Array.isArray(data.myBills) ? data.myBills : [];
-            this.showbillmenu = true;
             this.societyBills = Array.isArray(data.societyBills) ? data.societyBills : []; 
             this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
-            
             this.showPlayerBills = !!data.jobAccess; 
+        
+            if (data.locale) {
+                Locale.setLocale(data.locale); 
+            }
+        
+            this.showbillmenu = true;
         },
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;

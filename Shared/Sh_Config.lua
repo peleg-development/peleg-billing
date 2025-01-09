@@ -42,3 +42,4 @@ Config.Jobs = {
 }
 
 Config.Notify = "qb" -- Options: "esx", "qb", "okokNotify", "peleg-notify"
+Config.Locale = "en" -- Default to English; you can set this to "en", "he", "fr", "it"

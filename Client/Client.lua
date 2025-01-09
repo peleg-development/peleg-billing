@@ -26,6 +26,22 @@ function NotifyPlayer(message,title,  type)
     end
 end
 
+function GetCurrentLocale()
+    return Config.Locales[Config.Locale] or Config.Locales["en"]
+end
+
+function RefactorLocaleForNUI()
+    local flatLocale = {}
+    local currentLocale = GetCurrentLocale()
+
+    for _, section in pairs(currentLocale) do
+        for key, value in pairs(section) do
+            flatLocale[key] = value
+        end
+    end
+
+    return flatLocale
+end
 
 --------------------------------------------------------------------------------
 -- NUI Handling & Callbacks
@@ -35,7 +51,8 @@ local function OpenUi(data)
         print("Error: No data provided to OpenUi")
         return
     end
-
+    
+    data.locale = RefactorLocaleForNUI()
     local message = {
         type = "openMe",
         data = data

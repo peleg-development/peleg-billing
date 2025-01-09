@@ -17,6 +17,7 @@ server_scripts {
 
 shared_scripts {
     'Shared/Sh_Config.lua',
+    "Locales/Locales.lua",
 }
 
 ui_page 'Nui/index.html'
