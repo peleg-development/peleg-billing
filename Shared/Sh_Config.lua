@@ -43,6 +43,6 @@ Config.Locale = "en" -- Default to English; available options: "en", "he", "fr",
 --    |    |     | _/   \_ __|__ |  \_| |_____|
 
 Config.Tax = {
-    Enabled = true, -- Enable or disable the tax system
-    Percentage = 10 -- Set the tax percentage (e.g., 10%)
+    Enabled = false, -- Enable or disable the tax system
+    Percentage = 0 -- Set the tax percentage (e.g., 10%)
 }
