@@ -1,45 +1,48 @@
 Config = {}
 
-Config.Framework = "QB" -- QB or esx
-Config.BillingItem = "" -- Define the item here  leave empty for no item
+
+-- _______  ______ _______ _______ _______ _  _  _  _____   ______ _     _
+-- |______ |_____/ |_____| |  |  | |______ |  |  | |     | |_____/ |____/ 
+-- |       |    \_ |     | |  |  | |______ |__|__| |_____| |    \_ |    \_
+
+Config.Framework = "QB" -- Options: "QB" or "ESX"
+Config.BillingItem = "" -- Define the item here; leave empty for no item
 Config.BillCommand = "bill" -- Define the command to open the billing menu
+
+-- _____  _____  ______  _______
+--   |   |     | |_____] |______
+-- __|   |_____| |_____] ______|
 
 Config.Jobs = {
     ['police'] = {
-        ['1'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
-        ['2'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
-        ['3'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
+        ['1'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['2'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['3'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
     },
     ['ambulance'] = {
-        ['1'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
-        ['2'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
-        ['3'] = {
-            CanBill = true, -- can this grade bill players?
-            BossAccess = false, -- can access the refund page?
-            InspectCitizen = true, -- can this grade access this page?
-        },
+        ['1'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['2'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['3'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
     },
 }
 
+-- __   _  _____  _______ _____ _______ __   __
+-- | \  | |     |    |      |   |______   \_/  
+-- |  \_| |_____|    |    __|__ |          |   
+
 Config.Notify = "qb" -- Options: "esx", "qb", "okokNotify", "peleg-notify"
-Config.Locale = "en" -- Default to English; you can set this to "en", "he", "fr", "it"
+
+--         _____  _______ _______        _______
+-- |      |     | |       |_____| |      |______
+-- |_____ |_____| |_____  |     | |_____ |______
+
+Config.Locale = "en" -- Default to English; available options: "en", "he", "fr", "it"
+
+-- _______ _______ _     _ _____ __   _  ______
+--    |    |_____|  \___/    |   | \  | |  ____
+--    |    |     | _/   \_ __|__ |  \_| |_____|
+
+Config.Tax = {
+    Enabled = true, -- Enable or disable the tax system
+    Percentage = 10 -- Set the tax percentage (e.g., 10%)
+}

@@ -155,22 +155,29 @@ RegisterNetEvent("krs-billing:server:billPlayer", function(data)
         return
     end
 
+    local taxAmount = 0
+    if Config.Tax.Enabled and Config.Tax.Percentage > 0 then
+        taxAmount = math.floor((Config.Tax.Percentage / 100) * amount)
+        amount = amount + taxAmount 
+    end
+
     local query = MySQL.query.await(
         "INSERT INTO bills (amount, reason, job, sender_cid, receiver_cid, date, time, paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         {
-            amount, 
+            amount,  
             reason,
             jobName,
             cid, 
             targetCid, 
             os.date("%Y-%m-%d"), 
             os.date("%H:%M:%S"), 
-            false
+            false,
         }
     )
 
     if query then
-        sendToDiscord("SendBill", "Bill Sent", ("**Sender CID**: %s\n**Target CID**: %s\n**Amount**: $%s\n**Reason**: %s"):format(cid, targetCid, amount, reason))
+        local taxMessage = Config.Tax.Enabled and (" (Tax: $%s)"):format(taxAmount) or ""
+        sendToDiscord("SendBill", "Bill Sent", ("**Sender CID**: %s\n**Target CID**: %s\n**Amount**: $%s%s\n**Reason**: %s"):format(cid, targetCid, amount, taxMessage, reason))
     end
 end)
 
