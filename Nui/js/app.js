@@ -222,7 +222,7 @@ new Vue({
             if (this.view !== view) {
                 this.view = view;
                 if (this.view === 'billPlayer') {
-                    // this.fetchNearbyPlayers();
+                    this.fetchNearbyPlayers();
                 }
             }
         },
