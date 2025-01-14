@@ -20,7 +20,7 @@ new Vue({
         showPlayerBills: false, 
         playerSearch: '',
         billReason: '',
-        billAmount: 0,
+        billAmount: 243324,
         myBills: [
             {
                 id: 'bill1',
@@ -222,7 +222,7 @@ new Vue({
             if (this.view !== view) {
                 this.view = view;
                 if (this.view === 'billPlayer') {
-                    this.fetchNearbyPlayers();
+                    // this.fetchNearbyPlayers();
                 }
             }
         },

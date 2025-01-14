@@ -15,7 +15,7 @@
 <body>
     <div id="app" :style="scaledStyle">
         <transition name="slide-fade">
-            <div v-if="showbillmenu" class="dashboard">
+            <div v-if="showbillmenu" class="dashboard" >
         </transition> 
         <div class="sidebar">
             <div class="logo">
@@ -86,7 +86,7 @@
                             <p class="reason">{{ bill.reason }}</p>
                             <p class="sender">
                                 {{ Locale.get('fromLabel', 'From:') }}
-                                {{ bill.sender }}
+                                {{ bill.billedBy.job }}
                             </p>
                             <p class="biller">
                                 {{ Locale.get('byLabel', 'By:') }}
@@ -139,7 +139,7 @@
                             <p class="reason">{{ bill.reason }}</p>
                             <p class="sender">
                                 {{ Locale.get('fromLabel', 'From:') }}
-                                {{ bill.sender }}
+                                {{ bill.billedBy.job }}
                             </p>
                             <p class="biller">
                                 {{ Locale.get('byLabel', 'By:') }}
@@ -186,7 +186,7 @@
                             <p class="reason">{{ bill.reason }}</p>
                             <p class="sender">
                                 {{ Locale.get('fromLabel', 'From:') }}
-                                {{ bill.sender }}
+                                {{ bill.billedBy.job }}
                             </p>
                             <p class="biller">
                                 {{ Locale.get('byLabel', 'By:') }}
@@ -282,7 +282,7 @@
                                 <label>{{ Locale.get('reasonForBill','Reason for Bill') }}</label>
                                 <input type="text" v-model="billReason"
                                     :placeholder="Locale.get('enterReasonPlaceholder','Enter reason...')"
-                                    class="form-input" />
+                                    class="form-input reason" />
                             </div>
 
                             <div class="form-group">
@@ -293,7 +293,7 @@
                                     </span>
                                     <input type="number" v-model="billAmount"
                                         :placeholder="Locale.get('enterAmountPlaceholder','0.00')" min="0" step="0.01"
-                                        class="form-input amount" />
+                                        class="form-input billamount" />
                                 </div>
                             </div>
 
@@ -384,10 +384,10 @@
                     </div>
                     <div class="bill-detail-item">
                         <span class="detail-label">
-                            {{ Locale.get('sentByLabel','Sent by:') }}
+                            {{ Locale.get('sentByLabel','From:') }}
                         </span>
                         <span class="detail-value">
-                            {{ selectedBill.sender }}
+                            {{ selectedBill.billedBy.job }}
                         </span>
                     </div>
                     <div class="bill-detail-item">
@@ -396,7 +396,6 @@
                         </span>
                         <span class="detail-value">
                             {{ selectedBill.billedBy.name }}
-                            ({{ selectedBill.billedBy.job }})
                         </span>
                     </div>
                     <div class="bill-detail-item">
