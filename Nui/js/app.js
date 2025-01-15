@@ -21,6 +21,7 @@ new Vue({
         playerSearch: '',
         billReason: '',
         billAmount: 243324,
+        isSearching: false,
         myBills: [
             {
                 id: 'bill1',
@@ -182,6 +183,7 @@ new Vue({
         ]
     },
     computed: {
+        
         filteredPlayers() {
             if (!this.searchQuery) return this.players;
             return this.players.filter(player =>
@@ -223,6 +225,8 @@ new Vue({
                 this.view = view;
                 if (this.view === 'billPlayer') {
                     this.fetchNearbyPlayers();
+                } else if (this.view === 'inspectCitizen') {
+                    this.fetchOnlinePlayers();
                 }
             }
         },
@@ -387,10 +391,29 @@ new Vue({
         
             this.showbillmenu = true;
         },
+
+        fetchOnlinePlayers() {
+            fetch(`https://${GetParentResourceName()}/krs-billing:callback:getOnlinePlayers`, {
+                method: 'POST',
+                body: JSON.stringify({})
+            });
+        },
+
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;
-            // this.fetchPlayerBills(player.cid);
             this.showPlayerBills = true;
+            this.fetchPlayerBills(player.cid);
+        },
+    
+        fetchPlayerBills(cid) {
+            fetch(`https://${GetParentResourceName()}/krs-billing:callback:fetchPlayerBills`, {
+                method: 'POST',
+                body: JSON.stringify({ cid: cid })
+            }).then(resp => {
+                if (!this.selectedPlayerBills) {
+                    this.selectedPlayerBills = [];
+                }
+            });
         },
         closePlayerBills() {
             this.showPlayerBills = false;
@@ -412,6 +435,9 @@ new Vue({
             }).then(() => {
                 SetNuiFocus(false, false); 
             });
+        },
+        setBills(bills) {
+            this.selectedPlayerBills = bills;
         }
     },
     mounted() {
@@ -419,6 +445,8 @@ new Vue({
             if (event.data.type === 'openMe') {
                 const data = event.data.data;
                 this.opentest(data);
+            } else if (data.type === 'updatePlayerBills') {
+                this.setBills(data.bills);
             }
         });
     },

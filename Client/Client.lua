@@ -66,6 +66,13 @@ RegisterNetEvent('krs-billing:openBillingMenu', function(data)
     OpenUi(data)
 end)
 
+RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
+    SendNUIMessage({
+        type = 'updatePlayers',
+        players = players
+    })
+end)
+
 RegisterNUICallback('krs-billing:callback:refundBill', function(data, cb)
     local billId = data.billId
     TriggerServerEvent('krs-billing:refundBill', billId)
@@ -106,6 +113,24 @@ RegisterNUICallback('krs-billing:callback:checkBalance', function(data, cb)
     end)
 end)
 
+RegisterNUICallback('krs-billing:callback:getOnlinePlayers', function(data, cb)
+    TriggerServerEvent('krs-billing:server:getOnlinePlayers')
+    cb({})
+end)
+
+RegisterNUICallback('krs-billing:callback:fetchPlayerBills', function(data, cb)
+    local cid = data.cid
+    TriggerServerEvent('krs-billing:server:fetchPlayerBills', cid, function(bills)
+        cb({ bills = bills })
+    end)
+end)
+
+RegisterNetEvent('krs-billing:client:receiveBills', function(bills)
+    SendNUIMessage({
+        type = 'updatePlayerBills',
+        bills = bills
+    })
+end)
 
 --------------------------------------------------------------------------------
 -- Nearby Players

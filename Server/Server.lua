@@ -127,6 +127,82 @@ function GetCid(player)
     end
     return cid
 end
+
+RegisterNetEvent('krs-billing:server:fetchPlayerBills', function(targetCid)
+    local src = source
+    
+    local query = [[
+        SELECT 
+            b.*,
+            CONCAT(p1.firstname, ' ', p1.lastname) as sender_name,
+            CONCAT(p2.firstname, ' ', p2.lastname) as receiver_name,
+            p1.job as sender_job
+        FROM bills b
+        LEFT JOIN players p1 ON b.sender_cid = p1.citizenid
+        LEFT JOIN players p2 ON b.receiver_cid = p2.citizenid
+        WHERE b.receiver_cid = ?
+        ORDER BY b.date DESC, b.time DESC
+    ]]
+    
+    local bills = MySQL.query.await(query, {targetCid})
+    
+    if bills then
+        for i, bill in ipairs(bills) do
+            bills[i] = {
+                id = bill.id,
+                amount = bill.amount,
+                reason = bill.reason,
+                billedBy = {
+                    name = bill.sender_name,
+                    job = bill.sender_job
+                },
+                date = bill.date,
+                time = bill.time,
+                paid = bill.paid == 1
+            }
+        end
+    end
+    
+    TriggerClientEvent('krs-billing:client:receiveBills', src, bills)
+end)
+
+RegisterNetEvent('krs-billing:server:getOnlinePlayers', function()
+    local src = source
+    local players = {}
+
+    if Config.Framework == "QB" then
+        local QBPlayers = QBCore.Functions.GetQBPlayers()
+        for _, player in pairs(QBPlayers) do
+            local playerData = player.PlayerData
+            local charInfo = playerData.charinfo
+            if charInfo then
+                table.insert(players, {
+                    id = playerData.source,
+                    name = ("%s %s"):format(charInfo.firstname, charInfo.lastname),
+                    cid = playerData.citizenid
+                })
+            end
+        end
+    elseif Config.Framework == "ESX" then
+        local ESXPlayers = ESX.GetExtendedPlayers()
+        for _, xPlayer in pairs(ESXPlayers) do
+            local result = MySQL.query.await('SELECT firstname, lastname FROM users WHERE identifier = ?', {
+                xPlayer.identifier
+            })
+            
+            if result and result[1] then
+                table.insert(players, {
+                    id = xPlayer.source,
+                    name = ("%s %s"):format(result[1].firstname, result[1].lastname),
+                    cid = xPlayer.identifier
+                })
+            end
+        end
+    end
+
+    TriggerClientEvent('krs-billing:client:receiveOnlinePlayers', src, players)
+end)
+
 --------------------------------------------------------------------------------
 -- Billing Logic
 --------------------------------------------------------------------------------
@@ -182,7 +258,7 @@ RegisterNetEvent("krs-billing:server:billPlayer", function(data)
 end)
 
 --------------------------------------------------------------------------------
--- Example: Pay Bill
+--  Pay Bill
 --------------------------------------------------------------------------------
 RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
     local src = source
@@ -440,3 +516,5 @@ if Config.Framework == "ESX" then
         end
     end)
 end
+
+
