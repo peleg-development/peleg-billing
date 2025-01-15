@@ -393,11 +393,54 @@ new Vue({
         },
 
         fetchOnlinePlayers() {
+            if (this.isSearching) {
+                this.notify({
+                    title: "Cooldown Active",
+                    message: "Please wait before searching again.",
+                    type: "warning",
+                });
+                return;
+            }
+    
+            this.isSearching = true;
+            setTimeout(() => {
+                this.isSearching = false;
+            }, 3000); 
+ 
+            this.filteredPlayers = []; 
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:getOnlinePlayers`, {
-                method: 'POST',
-                body: JSON.stringify({})
-            });
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: this.searchQuery }), 
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Network response was not ok (${response.status})`);
+                    }
+                    return response.json();
+                })
+                .then((players) => {
+                    if (Array.isArray(players) && players.length > 0) {
+                        this.filteredPlayers = players; 
+                    } else {
+                        this.filteredPlayers = [];
+                        this.notify({
+                            title: "No Results",
+                            message: "No players found matching your search.",
+                            type: "info",
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching online players:", error);
+                    this.notify({
+                        title: "Error",
+                        message: "An error occurred while searching for players.",
+                        type: "error",
+                    });
+                });
         },
+    
 
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;

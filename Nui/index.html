@@ -309,19 +309,31 @@
 
             <!-- Inspect Citizen View -->
             <div v-if="view === 'inspectCitizen'" class="content-section">
-                <h2>{{ Locale.get('inspectCitizenHeading','Inspect Citizen') }}</h2>
+                <h2>{{ Locale.get('inspectCitizenHeading', 'Inspect Citizen') }}</h2>
                 <div class="search-section">
                     <div class="search-container">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" v-model="searchQuery"
-                            :placeholder="Locale.get('searchByNameOrCid','Search by name or CID...')"
-                            class="search-input" />
+                        <input
+                            type="text"
+                            v-model="searchQuery"
+                            @keydown.enter="fetchOnlinePlayers"
+                            :placeholder="Locale.get('searchByNameOrCid', 'Search by name or CID...')"
+                            class="search-input"
+                            :disabled="isSearching"
+                        />
                     </div>
+                    <p v-if="isSearching" class="cooldown-message">
+                        Please wait before searching again...
+                    </p>
                 </div>
-
+            
                 <div v-if="filteredPlayers.length" class="players-grid">
-                    <div v-for="player in filteredPlayers" :key="player.cid" class="player-card"
-                        @click="selectPlayerForInspection(player)">
+                    <div
+                        v-for="player in filteredPlayers"
+                        :key="player.cid"
+                        class="player-card"
+                        @click="selectPlayerForInspection(player)"
+                    >
                         <div class="player-card-avatar">{{ player.name[0] }}</div>
                         <div class="player-card-info">
                             <h3>{{ player.name }}</h3>
@@ -330,23 +342,16 @@
                         <i class="fas fa-chevron-right arrow-icon"></i>
                     </div>
                 </div>
-
+            
                 <div v-else class="no-results">
                     <div class="no-results-icon">
                         <i class="fas fa-user-slash"></i>
                     </div>
-                    <h3>{{ Locale.get('noResultsFound','No Results Found') }}</h3>
-                    <p>
-                        {{
-                        Locale.get(
-                        'trySearchingDifferentName',
-                        'Try searching for a different name or CID.'
-                        )
-                        }}
-                    </p>
+                    <h3>{{ Locale.get('noResultsFound', 'No Results Found') }}</h3>
+                    <p>{{ Locale.get('trySearchingDifferentName', 'Try searching for a different name or CID.') }}</p>
                 </div>
             </div>
-
+            
  
         </div>
     </div>
