@@ -73,6 +73,10 @@ RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
     })
 end)
 
+RegisterNetEvent('krs-billing:client:notify', function(message, type)
+    NotifyPlayer(message, type)
+end)
+
 RegisterNUICallback('krs-billing:callback:refundBill', function(data, cb)
     local billId = data.billId
     TriggerServerEvent('krs-billing:refundBill', billId)

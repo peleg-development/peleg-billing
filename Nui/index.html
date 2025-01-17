@@ -35,10 +35,10 @@
                     <span>{{ Locale.get('historyLabel', 'History') }}</span>
                 </button>
 
-                <button @click="setView('societyBills')" class="nav-item" :class="{ active: view === 'societyBills' }">
+                <button v-if="showSocietyMenu" @click="setView('societyBills')" class="nav-item" :class="{ active: view === 'societyBills' }">
                     <i class="fas fa-building"></i>
                     <span>{{ Locale.get('societyLabel', 'Society') }}</span>
-                </button>
+                </button>                
 
                 <button @click="setView('billPlayer')" class="nav-item" :class="{ active: view === 'billPlayer' }">
                     <i class="fas fa-user-plus"></i>
@@ -439,7 +439,7 @@
     </transition>
                <!-- Player Bills Overlay -->
                <transition name="fade">
-                <div v-if="showPlayerBills" class="playerbills-overlay">
+                <div v-if="inspectCitizen" class="playerbills-overlay">
                     <div class="playerbills-container">
                         <div class="playerbills-header">
                             <h2>

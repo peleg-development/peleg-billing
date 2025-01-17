@@ -255,6 +255,8 @@ RegisterNetEvent("krs-billing:server:billPlayer", function(data)
         local taxMessage = Config.Tax.Enabled and (" (Tax: $%s)"):format(taxAmount) or ""
         sendToDiscord("SendBill", "Bill Sent", ("**Sender CID**: %s\n**Target CID**: %s\n**Amount**: $%s%s\n**Reason**: %s"):format(cid, targetCid, amount, taxMessage, reason))
     end
+
+    TriggerClientEvent("krs-billing:client:notify", source, "Bill sent successfully")
 end)
 
 --------------------------------------------------------------------------------
@@ -282,70 +284,32 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
 
     if Config.Framework == "QB" then
         local xPlayer = QBCore.Functions.GetPlayer(src)
-        if payFromJobAccount then
-            if xPlayer.PlayerData.job.isboss then
-                TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount, function(success)
-                    if success then
-                        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                        TriggerClientEvent('QBCore:Notify', src, 'Bill paid from job account and credited to sender society', 'success')
-                        sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
-                    else
-                        TriggerClientEvent('QBCore:Notify', src, 'Failed to credit the bill amount to sender society', 'error')
-                    end
-                end)
-            else
-                TriggerClientEvent('QBCore:Notify', src, 'You do not have permission to pay from job account', 'error')
-            end
+        if xPlayer.Functions.RemoveMoney('cash', amount) or xPlayer.Functions.RemoveMoney('bank', amount) then
+            TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount)
+            MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
+            TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
+            sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
         else
-            if xPlayer.Functions.RemoveMoney('cash', amount) then
-                TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount, function(success)
-                    if success then
-                        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                        TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
-                        sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
-                    else
-                        TriggerClientEvent('QBCore:Notify', src, 'Failed to credit the bill amount to sender society', 'error')
-                    end
-                end)
-            else
-                TriggerClientEvent('QBCore:Notify', src, 'Not enough cash to pay the bill', 'error')
-            end
+            TriggerClientEvent('QBCore:Notify', src, 'Not enough cash to pay the bill', 'error')
         end
 
     elseif Config.Framework == "ESX" then
         local xPlayer = ESX.GetPlayerFromId(src)
         local xPlayerJob = xPlayer.job
-        if payFromJobAccount then
-            if xPlayerJob.grade_name == "boss" then
-                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
-                    if account then
-                        account.addMoney(amount)
-                        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                        TriggerClientEvent('esx:showNotification', src, 'Bill paid from job account and credited to sender society')
-                        sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
-                    else
-                        TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
-                    end
-                end)
-            else
-                TriggerClientEvent('esx:showNotification', src, 'You do not have permission to pay from job account')
-            end
+        if xPlayer.getMoney() >= amount then
+            xPlayer.removeMoney(amount)
+            TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
+                if account then
+                    account.addMoney(amount)
+                    MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
+                    TriggerClientEvent('esx:showNotification', src, 'Bill paid from your cash and credited to sender society')
+                    sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
+                else
+                    TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
+                end
+            end)
         else
-            if xPlayer.getMoney() >= amount then
-                xPlayer.removeMoney(amount)
-                TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
-                    if account then
-                        account.addMoney(amount)
-                        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                        TriggerClientEvent('esx:showNotification', src, 'Bill paid from your cash and credited to sender society')
-                        sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
-                    else
-                        TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
-                    end
-                end)
-            else
-                TriggerClientEvent('esx:showNotification', src, 'Not enough cash to pay the bill')
-            end
+            TriggerClientEvent('esx:showNotification', src, 'Not enough cash to pay the bill')
         end
     end
 end)
@@ -432,6 +396,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 billingHistory  = billingHistory,
                 societyBills    = societyBills,
                 jobAccess       = jobConfig.BossAccess,
+                inspectCitizen  = jobConfig.InspectCitizen,
                 cid             = citizenId
             })
         else
