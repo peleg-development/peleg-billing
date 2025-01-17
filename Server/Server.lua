@@ -40,25 +40,18 @@ function GetPlayerBills(cid)
     local billingHistory = {}
     local billResults = MySQL.query.await("SELECT * FROM `bills` WHERE receiver_cid = ?", {cid})
 
-    for _, bill in pairs(billResults) do
-        local receiverData = MySQL.query.await("SELECT charinfo, job FROM `players` WHERE citizenid = ?", {bill.receiver_cid})
-        local senderData   = MySQL.query.await("SELECT charinfo FROM `players` WHERE citizenid = ?", {bill.sender_cid})
-
-        local receiverCharinfo = json.decode(receiverData[1].charinfo)
-        local receiverJob      = json.decode(receiverData[1].job)
-        local senderCharinfo   = json.decode(senderData[1].charinfo)
-
-        local receiverName = receiverCharinfo.firstname .. " " .. receiverCharinfo.lastname
-        local senderName   = senderCharinfo.firstname .. " " .. senderCharinfo.lastname
+    for _, bill in ipairs(billResults) do
+        local senderName = bill.sender_name
+        local receiverName = bill.receiver_name
+        local job = bill.job
 
         local billData = {
             id = bill.id,
             amount = bill.amount,
             reason = bill.reason,
             sender = senderName,
-            billedBy = { name = senderName, cid = bill.sender_cid, job = receiverJob.name },
+            billedBy = { name = senderName, cid = bill.sender_cid, job = job },
             receiver = receiverName,
-            job = receiverJob.name,
             date = bill.date,
             time = bill.time,
             paid = bill.paid,
@@ -80,16 +73,9 @@ function GetSocietyBills(job)
     local societyBills = {}
     local billResults = MySQL.query.await("SELECT * FROM `bills` WHERE job = ?", {job})
 
-    for _, bill in pairs(billResults) do
-        local receiverData = MySQL.query.await("SELECT charinfo, job FROM `players` WHERE citizenid = ?", {bill.receiver_cid})
-        local senderData   = MySQL.query.await("SELECT charinfo FROM `players` WHERE citizenid = ?", {bill.sender_cid})
-
-        local receiverCharinfo = json.decode(receiverData[1].charinfo)
-        local receiverJob      = json.decode(receiverData[1].job)
-        local senderCharinfo   = json.decode(senderData[1].charinfo)
-
-        local receiverName = receiverCharinfo.firstname .. " " .. receiverCharinfo.lastname
-        local senderName   = senderCharinfo.firstname .. " " .. senderCharinfo.lastname
+    for _, bill in ipairs(billResults) do
+        local senderName = bill.sender_name
+        local receiverName = bill.receiver_name
 
         local billData = {
             id = bill.id,
@@ -97,7 +83,6 @@ function GetSocietyBills(job)
             reason = bill.reason,
             sender = senderName,
             receiver = receiverName,
-            job = receiverJob.name,
             date = bill.date,
             time = bill.time,
             paid = bill.paid,
@@ -110,7 +95,6 @@ function GetSocietyBills(job)
 
     return societyBills
 end
-
 
 function GetCid(player) 
     local cid = nil
