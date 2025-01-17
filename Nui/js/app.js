@@ -22,7 +22,7 @@ new Vue({
         billReason: '',
         billAmount: 243324,
         isSearching: false,
-        inspectCitizen: false,
+        showInspectCitizen: false,
         myBills: [
             {
                 id: 'bill1',
@@ -385,7 +385,7 @@ new Vue({
             this.societyBills = Array.isArray(data.societyBills) ? data.societyBills : []; 
             this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
             this.showSocietyMenu = data.jobAccess; 
-            this.inspectCitizen = data.inspectCitizen;
+            this.showInspectCitizen = data.inspectCitizen;
 
             if (data.locale) {
                 Locale.setLocale(data.locale); 

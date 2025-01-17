@@ -411,6 +411,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 billingHistory  = billingHistory,
                 societyBills    = societyBills,
                 jobAccess       = jobConfig.BossAccess,
+                inspectCitizen  = jobConfig.InspectCitizen,
                 cid             = citizenId
             })
         else
