@@ -17,12 +17,14 @@ new Vue({
         Cid: '12345',
         view: 'myBills',
         showbillmenu: false,
-        showSocietyMenu: false, 
         playerSearch: '',
         billReason: '',
         billAmount: 243324,
         isSearching: false,
+        showSelectedPlayerMenu: false,
+        showSocietyMenu: false, 
         showInspectCitizen: false,
+        canBill: false,
         myBills: [
             {
                 id: 'bill1',
@@ -386,6 +388,7 @@ new Vue({
             this.billingHistory = Array.isArray(data.billingHistory) ? data.billingHistory : [];
             this.showSocietyMenu = data.jobAccess; 
             this.showInspectCitizen = data.inspectCitizen;
+            this.canBill = data.canBill;
 
             if (data.locale) {
                 Locale.setLocale(data.locale); 
@@ -446,7 +449,7 @@ new Vue({
 
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;
-            this.showSocietyMenu = true;
+            this.showSelectedPlayerMenu = true;
             this.fetchPlayerBills(player.cid);
         },
     
@@ -461,7 +464,7 @@ new Vue({
             });
         },
         closePlayerBills() {
-            this.showSocietyMenu = false;
+            this.showSelectedPlayerMenu = false;
             this.selectedPlayer = null;
             this.selectedPlayerBills = [];
         },

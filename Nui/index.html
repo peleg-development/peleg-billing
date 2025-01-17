@@ -39,17 +39,17 @@
                     <i class="fas fa-building"></i>
                     <span>{{ Locale.get('societyLabel', 'Society') }}</span>
                 </button>                
+                
 
-                <button @click="setView('billPlayer')" class="nav-item" :class="{ active: view === 'billPlayer' }">
+                <button v-if="canBill" @click="setView('billPlayer')" class="nav-item" :class="{ active: view === 'billPlayer' }">
                     <i class="fas fa-user-plus"></i>
                     <span>{{ Locale.get('billPlayerLabel', 'Bill Player') }}</span>
                 </button>
 
-                <button @click="setView('inspectCitizen')" class="nav-item"
-                    :class="{ active: view === 'inspectCitizen' }">
+                <button v-if="showInspectCitizen" @click="setView('inspectCitizen')" class="nav-item" :class="{ active: view === 'inspectCitizen' }">
                     <i class="fas fa-search"></i>
                     <span>{{ Locale.get('inspectLabel', 'Inspect') }}</span>
-                </button>
+                </button>    
             </nav>
         </div>
 
@@ -437,83 +437,83 @@
             </div>
         </div>
     </transition>
-               <!-- Player Bills Overlay -->
-               <transition name="fade">
-                <div v-if="showInspectCitizen" class="playerbills-overlay">
-                    <div class="playerbills-container">
-                        <div class="playerbills-header">
-                            <h2>
+    <!-- Player Bills Overlay -->
+    <transition name="fade">
+    <div v-if="showSelectedPlayerMenu" class="playerbills-overlay">
+        <div class="playerbills-container">
+            <div class="playerbills-header">
+                <h2>
+                    {{
+                    Locale.get('billsFor','Bills for')
+                    }} {{ selectedPlayer.name }}
+                </h2>
+                <button @click="closePlayerBills" class="playerbills-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="playerbills-body">
+                <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
+                    <div v-for="bill in selectedPlayerBills" :key="bill.id" class="playerbills-card"
+                        :class="{ unpaid: !bill.paid }">
+                        <div class="playerbills-card-header">
+                            <div class="playerbills-amount">
                                 {{
-                                Locale.get('billsFor','Bills for')
-                                }} {{ selectedPlayer.name }}
-                            </h2>
-                            <button @click="closePlayerBills" class="playerbills-close">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-
-                        <div class="playerbills-body">
-                            <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
-                                <div v-for="bill in selectedPlayerBills" :key="bill.id" class="playerbills-card"
-                                    :class="{ unpaid: !bill.paid }">
-                                    <div class="playerbills-card-header">
-                                        <div class="playerbills-amount">
-                                            {{
-                                            Locale.get('currencySymbol','$')
-                                            }}{{ bill.amount }}
-                                        </div>
-                                        <div class="playerbills-status">
-                                            {{ bill.paid ? Locale.get('paidStatus','Paid') :
-                                            Locale.get('unpaidStatus','Unpaid') }}
-                                        </div>
-                                    </div>
-                                    <div class="playerbills-card-body">
-                                        <p>
-                                            <i class="fas fa-info-circle"></i>
-                                            <strong>{{ Locale.get('reasonLabel','Reason:') }}</strong>
-                                            {{ bill.reason }}
-                                        </p>
-                                        <p>
-                                            <i class="fas fa-user"></i>
-                                            <strong>{{ Locale.get('billedByLabel','Billed By:') }}</strong>
-                                            {{ bill.billedBy.name }}
-                                        </p>
-                                        <p>
-                                            <i class="fas fa-brands"></i>
-                                            <strong>{{ Locale.get('fromLabel','From:') }}</strong>
-                                            {{ bill.billedBy.job }}
-                                        </p>
-                                        <p>
-                                            <i class="fas fa-calendar"></i>
-                                            <strong>{{ Locale.get('dateLabel','Date:') }}</strong>
-                                            {{ bill.date }}
-                                        </p>
-                                    </div>
+                                Locale.get('currencySymbol','$')
+                                }}{{ bill.amount }}
                             </div>
-
-                            <div v-else class="playerbills-no-data">
-                                <i class="fas fa-receipt"></i>
-                                <h3>{{ Locale.get('noBillsFound','No Bills Found') }}</h3>
-                                <p>
-                                    {{
-                                    Locale.get(
-                                    'noPlayerBillsRecorded',
-                                    'This player currently has no bills recorded.'
-                                    )
-                                    }}
-                                </p>
+                            <div class="playerbills-status">
+                                {{ bill.paid ? Locale.get('paidStatus','Paid') :
+                                Locale.get('unpaidStatus','Unpaid') }}
                             </div>
                         </div>
-
-                        <div class="playerbills-footer">
-                            <button @click="closePlayerBills" class="playerbills-btn-close">
-                                <i class="fas fa-times"></i>
-                                {{ Locale.get('closeButton','Close') }}
-                            </button>
+                        <div class="playerbills-card-body">
+                            <p>
+                                <i class="fas fa-info-circle"></i>
+                                <strong>{{ Locale.get('reasonLabel','Reason:') }}</strong>
+                                {{ bill.reason }}
+                            </p>
+                            <p>
+                                <i class="fas fa-user"></i>
+                                <strong>{{ Locale.get('billedByLabel','Billed By:') }}</strong>
+                                {{ bill.billedBy.name }}
+                            </p>
+                            <p>
+                                <i class="fas fa-brands"></i>
+                                <strong>{{ Locale.get('fromLabel','From:') }}</strong>
+                                {{ bill.billedBy.job }}
+                            </p>
+                            <p>
+                                <i class="fas fa-calendar"></i>
+                                <strong>{{ Locale.get('dateLabel','Date:') }}</strong>
+                                {{ bill.date }}
+                            </p>
                         </div>
-                    </div>
                 </div>
-            </transition>
+
+                <div v-else class="playerbills-no-data">
+                    <i class="fas fa-receipt"></i>
+                    <h3>{{ Locale.get('noBillsFound','No Bills Found') }}</h3>
+                    <p>
+                        {{
+                        Locale.get(
+                        'noPlayerBillsRecorded',
+                        'This player currently has no bills recorded.'
+                        )
+                        }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="playerbills-footer">
+                <button @click="closePlayerBills" class="playerbills-btn-close">
+                    <i class="fas fa-times"></i>
+                    {{ Locale.get('closeButton','Close') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</transition>
     </div>
 
     <script src="https://unpkg.com/vue-select@latest"></script>

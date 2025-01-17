@@ -356,17 +356,17 @@ end)
 --------------------------------------------------------------------------------
 RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
     local src = source
-    
+
     if Config.Framework == "QB" then
         local Player = QBCore.Functions.GetPlayer(src)
         if not Player then return end
-        
+
         local myCid = Player.PlayerData.citizenid
         citizenId = citizenId or myCid 
 
         local unpaidBills, billingHistory = GetPlayerBills(citizenId)
         local societyBills = {}
-        local jobName  = Player.PlayerData.job.name
+        local jobName  = Player.PlayerData.job.name or "none"
         local jobGrade = tostring(Player.PlayerData.job.grade.level) or "0"
 
         if Config.Jobs[jobName] and Config.Jobs[jobName][jobGrade] then
@@ -381,23 +381,32 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 societyBills    = societyBills,
                 jobAccess       = jobConfig.BossAccess,
                 inspectCitizen  = jobConfig.InspectCitizen,
+                canBill         = jobConfig.CanBill;
                 cid             = citizenId
             })
         else
-            TriggerClientEvent('QBCore:Notify', src, "You don't have access to the billing menu!", "error")
+            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+                myBills         = unpaidBills,
+                billingHistory  = billingHistory,
+                societyBills    = {},
+                jobAccess       = false,
+                inspectCitizen  = false,
+                canBill         = false;
+                cid             = citizenId
+            })
         end
 
     elseif Config.Framework == "ESX" then
         local xPlayer = ESX.GetPlayerFromId(src)
         if not xPlayer then return end
-        
+
         local myIdentifier = xPlayer.identifier
         local myCid = myIdentifier 
         citizenId = citizenId or myCid
 
         local unpaidBills, billingHistory = GetPlayerBills(citizenId)
         local societyBills = {}
-        local jobName  = xPlayer.job.name
+        local jobName  = xPlayer.job.name or "none"
         local jobGrade = tostring(xPlayer.job.grade) or "0"
 
         if Config.Jobs[jobName] and Config.Jobs[jobName][jobGrade] then
@@ -412,10 +421,19 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 societyBills    = societyBills,
                 jobAccess       = jobConfig.BossAccess,
                 inspectCitizen  = jobConfig.InspectCitizen,
+                canBill         = jobConfig.CanBill;
                 cid             = citizenId
             })
         else
-            TriggerClientEvent('esx:showNotification', src, "You don't have access to the billing menu!")
+            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+                myBills         = unpaidBills,
+                billingHistory  = billingHistory,
+                societyBills    = {},
+                jobAccess       = false,
+                inspectCitizen  = false,
+                canBill         = false;
+                cid             = citizenId
+            })
         end
     end
 end)
