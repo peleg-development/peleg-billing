@@ -15,14 +15,14 @@ Config.BillCommand = "bill" -- Define the command to open the billing menu
 
 Config.Jobs = {
     ['police'] = {
-        ['1'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
-        ['2'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
-        ['3'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['1'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
+        ['2'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
+        ['3'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
     },
     ['ambulance'] = {
-        ['1'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
-        ['2'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
-        ['3'] = { CanBill = true, BossAccess = false, InspectCitizen = true },
+        ['1'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
+        ['2'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
+        ['3'] = { CanBill = true, BossAccess = true, InspectCitizen = true },
     },
 }
 
