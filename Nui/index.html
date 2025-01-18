@@ -453,18 +453,17 @@
 
             <div class="playerbills-body">
                 <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
-                    <div v-for="bill in selectedPlayerBills" :key="bill.id" class="playerbills-card"
-                        :class="{ unpaid: !bill.paid }">
+                    <div v-for="bill in selectedPlayerBills" :key="bill.id" class="playerbills-card">
                         <div class="playerbills-card-header">
-                            <div class="playerbills-amount">
-                                {{
-                                Locale.get('currencySymbol','$')
-                                }}{{ bill.amount }}
-                            </div>
-                            <div class="playerbills-status">
-                                {{ bill.paid ? Locale.get('paidStatus','Paid') :
-                                Locale.get('unpaidStatus','Unpaid') }}
-                            </div>
+                          <div class="playerbills-amount">
+                            {{ Locale.get('currencySymbol','$') }}{{ bill.amount }}
+                          </div>
+                          <div 
+                            class="status-badge"
+                            :class="bill.paid ? 'paid' : 'pending'"
+                          >
+                            {{ bill.paid ? Locale.get('paidStatus','Paid') : Locale.get('unpaidStatus','Unpaid') }}
+                          </div>
                         </div>
                         <div class="playerbills-card-body">
                             <p>

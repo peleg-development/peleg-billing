@@ -1,49 +1,67 @@
 :root {
     /* Primary Colors */
-    --color-background: #1a1b1e;
-    --color-background-dark: #141517;
-    --color-sidebar: #1f2023;
-    --color-sidebar-border: #2d2e32;
-    --color-sidebar-hover: #2d2e32;
-    --color-sidebar-hover-text: #3b82f6; 
-    --color-sidebar-active: #3b82f6; 
+    --color-background: #1f2125; 
+    --color-background-dark: #191b1e;
+    --color-sidebar: #24272b;   
+    --color-sidebar-border: #303236;
+    --color-sidebar-hover: #2d2f33;
+    --color-sidebar-hover-text: #3fa1f8; 
+    --color-sidebar-active: #3fa1f8;     
     --color-sidebar-active-text: #ffffff;
-    --color-text: #e2e8f0;
-    --color-text-secondary: #a0aec0;
-    --color-text-placeholder: #a0aec0;
-    --color-primary: #3b82f6; 
-    --color-primary-gradient: linear-gradient(45deg, #3b82f6, #60a5fa); 
-    --color-secondary: #60a5fa; 
-    --color-border: #2d2e32;
-    --color-border-hover: #3b82f6; 
+  
+    --color-text: #f2f6fb;              
+    --color-text-secondary: #b7c1ce;   
+    --color-text-placeholder: #9caaba; 
+  
+    /* Primary / Accent Blues */
+    --color-primary: #3fa1f8;        
+    --color-primary-gradient: linear-gradient(
+      45deg,
+      #3fa1f8,
+      #70bff8
+    ); /* Gentle two-stop gradient */
+    --color-secondary: #70bff8;         
+  
+    /* Borders & Shadows */
+    --color-border: #2d2f33;
+    --color-border-hover: #3fa1f8;    
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-hover: rgba(0, 0, 0, 0.2);
-    
-    /* Status Colors */
-    --color-status-paid-bg: #1c4532;
-    --color-status-paid-text: #48bb78;
-    --color-status-pending-bg: #742a2a;
-    --color-status-pending-text: #fc8181;
-    
-    /* Modal Colors */
+  
+    /* Status Colors (Paid / Pending) */
+    --color-status-paid-bg: #1f5d44;    
+    --color-status-paid-text: #48e0a8;  
+    --color-status-pending-bg: #752f2f; 
+    --color-status-pending-text: #ff9191; 
+  
+    /* Modal Overlays & Background */
     --color-modal-overlay: rgba(0, 0, 0, 0.8);
-    --color-modal-background: #1f2023;
-    
+    --color-modal-background: #24272b;
+  
     /* Button Colors */
-    --color-button-hover: #3b82f6; 
-    --color-button-background: linear-gradient(45deg, #3b82f6, #60a5fa);
-    --color-button-details-background: #2d2e32;
-    --color-button-details-hover: linear-gradient(45deg, #3b82f6, #60a5fa);
-    
-    /* Scrollbar Colors */
-    --color-scrollbar-track: #141517;
-    --color-scrollbar-thumb: #2d2e32;
-    --color-scrollbar-thumb-hover: #3b82f6; 
-
+    --color-button-hover: #3fa1f8;
+    --color-button-background: linear-gradient(
+      45deg,
+      #3fa1f8,
+      #70bff8
+    );
+    --color-button-details-background: #303236;
+    --color-button-details-hover: linear-gradient(
+      45deg,
+      #3fa1f8,
+      #70bff8
+    );
+  
+    /* Scrollbar */
+    --color-scrollbar-track: #191b1e;
+    --color-scrollbar-thumb: #303236;
+    --color-scrollbar-thumb-hover: #3fa1f8;
+  
     /* Base responsive settings */
     --sidebar-width: 220px;
     --sidebar-collapsed-width: 80px;
-}
+  }
+  
 
 * {
     margin: 0;

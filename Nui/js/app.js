@@ -26,26 +26,26 @@ new Vue({
         showInspectCitizen: false,
         canBill: false,
         myBills: [
-            {
-                id: 'bill1',
-                amount: 150.00,
-                reason: 'Monthly Rent',
-                sender: 'Landlord',
-                billedBy: { name: 'John Doe', job: 'Property Manager' },
-                date: '2024-12-01',
-                time: '10:00 AM',
-                paid: false
-            },
-            {
-                id: 'bill2',
-                amount: 75.50,
-                reason: 'Utility Payment',
-                sender: 'Utility Company',
-                billedBy: { name: 'Jane Smith', job: 'Utility Manager' },
-                date: '2024-11-15',
-                time: '2:30 PM',
-                paid: true
-            }
+            // {
+            //     id: 'bill1',
+            //     amount: 150.00,
+            //     reason: 'Monthly Rent',
+            //     sender: 'Landlord',
+            //     billedBy: { name: 'John Doe', job: 'Property Manager' },
+            //     date: '2024-12-01',
+            //     time: '10:00 AM',
+            //     paid: false
+            // },
+            // {
+            //     id: 'bill2',
+            //     amount: 75.50,
+            //     reason: 'Utility Payment',
+            //     sender: 'Utility Company',
+            //     billedBy: { name: 'Jane Smith', job: 'Utility Manager' },
+            //     date: '2024-11-15',
+            //     time: '2:30 PM',
+            //     paid: true
+            // }
         ],
         societyBills: [
             // {
@@ -491,7 +491,7 @@ new Vue({
         setBills(bills) {
             this.selectedPlayerBills = bills;
         },
-
+        
         handleKeyPress(event) {
             if (event.key === 'Escape' && this.showbillmenu) {
                 this.closeUI();
