@@ -494,10 +494,24 @@ new Vue({
         
         handleKeyPress(event) {
             if (event.key === 'Escape' && this.showbillmenu) {
+              if (this.showBillDetails) {
+                this.closeDetails();
+              } 
+              else if (this.showSelectedPlayerMenu) {
+                this.showSelectedPlayerMenu = false;
+              } 
+              else if (this.showSocietyMenu) {
+                this.showSocietyMenu = false;
+              }
+              else if (this.showInspectCitizen) {
+                this.showInspectCitizen = false;
+              }
+              else {
                 this.closeUI();
+              }
             }
-        },
-    
+          },
+          
         beforeDestroy() {
             window.removeEventListener('keydown', this.handleKeyPress);
         }
