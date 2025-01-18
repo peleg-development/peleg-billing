@@ -148,32 +148,36 @@ end)
 RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     local src = source
     local players = {}
-    local lowerQuery = searchQuery:lower() 
+    local lowerQuery = searchQuery:lower()
 
     if Config.Framework == "QB" then
         local QBPlayers = QBCore.Functions.GetQBPlayers()
         for _, player in pairs(QBPlayers) do
             local playerData = player.PlayerData
             local charInfo = playerData.charinfo
+
             if charInfo then
                 local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
                 local cid = playerData.citizenid
 
                 if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
                     table.insert(players, {
-                        id = playerData.source,
+                        id   = playerData.source,   
                         name = fullName,
-                        cid = cid
+                        cid  = cid,
+                        online = true
                     })
                 end
             end
         end
+
     elseif Config.Framework == "ESX" then
         local ESXPlayers = ESX.GetExtendedPlayers()
         for _, xPlayer in pairs(ESXPlayers) do
-            local result = MySQL.query.await('SELECT firstname, lastname FROM users WHERE identifier = ?', {
-                xPlayer.identifier
-            })
+            local result = MySQL.query.await(
+                'SELECT firstname, lastname FROM users WHERE identifier = ?',
+                { xPlayer.identifier }
+            )
 
             if result and result[1] then
                 local fullName = ("%s %s"):format(result[1].firstname, result[1].lastname)
@@ -181,10 +185,80 @@ RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
 
                 if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
                     table.insert(players, {
-                        id = xPlayer.source,
+                        id   = xPlayer.source,
                         name = fullName,
-                        cid = cid
+                        cid  = cid,
+                        online = true
                     })
+                end
+            end
+        end
+    end
+
+
+    if Config.Framework == "QB" then
+        local allPlayers = MySQL.query.await([[
+            SELECT citizenid, charinfo
+            FROM players
+        ]])
+
+        if allPlayers then
+            for _, row in ipairs(allPlayers) do
+                local info = json.decode(row.charinfo or '{}')
+                local firstName = info.firstname or "Unknown"
+                local lastName  = info.lastname or ""
+                local fullName  = ("%s %s"):format(firstName, lastName)
+                local cid       = row.citizenid
+
+                if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
+                    local isDuplicate = false
+                    for _, existing in ipairs(players) do
+                        if existing.cid == cid then
+                            isDuplicate = true
+                            break
+                        end
+                    end
+
+                    if not isDuplicate then
+                        table.insert(players, {
+                            id     = nil,      
+                            name   = fullName,
+                            cid    = cid,
+                            online = false
+                        })
+                    end
+                end
+            end
+        end
+
+    elseif Config.Framework == "ESX" then
+        local allPlayers = MySQL.query.await([[
+            SELECT identifier, firstname, lastname
+            FROM users
+        ]])
+
+        if allPlayers then
+            for _, row in ipairs(allPlayers) do
+                local fullName = ("%s %s"):format(row.firstname, row.lastname)
+                local cid      = row.identifier
+
+                if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
+                    local isDuplicate = false
+                    for _, existing in ipairs(players) do
+                        if existing.cid == cid then
+                            isDuplicate = true
+                            break
+                        end
+                    end
+
+                    if not isDuplicate then
+                        table.insert(players, {
+                            id     = nil,
+                            name   = fullName,
+                            cid    = cid,
+                            online = false
+                        })
+                    end
                 end
             end
         end
@@ -193,21 +267,22 @@ RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     TriggerClientEvent('peleg-billing:client:receiveOnlinePlayers', src, players)
 end)
 
-
-
 --------------------------------------------------------------------------------
 -- Billing Logic
 --------------------------------------------------------------------------------
 RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
-    local cid       = GetCid(source)
-    local targetCid = data.cid
+    local src       = source
+    local cid       = GetCid(src)  
+    local targetCid = data.cid   
     local reason    = data.reason
     local amount    = data.amount
 
     local jobName
     if Config.Framework == "QB" then
         local Player = QBCore.Functions.GetPlayerByCitizenId(cid)
-        jobName = Player.PlayerData.job.name
+        if Player and Player.PlayerData.job then
+            jobName = Player.PlayerData.job.name
+        end
     elseif Config.Framework == "ESX" then
         local xPlayers = ESX.GetExtendedPlayers()
         for _, xPlayer in pairs(xPlayers) do
@@ -219,36 +294,95 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
     end
 
     if not jobName then
-        print("Cannot find job for the player who is billing.")
+        print("^1[peleg-billing] Cannot find job for the sender. Billing aborted.^0")
         return
+    end
+
+    local senderName = "Unknown Sender"
+
+    if Config.Framework == "QB" then
+        local Player = QBCore.Functions.GetPlayerByCitizenId(cid)
+        if Player and Player.PlayerData.charinfo then
+            local info = Player.PlayerData.charinfo
+            senderName = string.format("%s %s", info.firstname or "Unknown", info.lastname or "")
+        else
+            local result = MySQL.query.await("SELECT charinfo FROM players WHERE citizenid = ?", { cid })
+            if result and result[1] then
+                local charinfo = json.decode(result[1].charinfo or "{}")
+                senderName = string.format("%s %s", charinfo.firstname or "Unknown", charinfo.lastname or "")
+            end
+        end
+    elseif Config.Framework == "ESX" then
+        local xPlayers = ESX.GetExtendedPlayers()
+        local foundOnline = false
+        for _, xPlayer in pairs(xPlayers) do
+            if xPlayer.getIdentifier() == cid then
+                local nameResult = MySQL.query.await("SELECT firstname, lastname FROM users WHERE identifier = ?", { cid })
+                if nameResult and nameResult[1] then
+                    senderName = string.format("%s %s", nameResult[1].firstname, nameResult[1].lastname)
+                end
+                foundOnline = true
+                break
+            end
+        end
+        if not foundOnline then
+            -- Offline fallback
+            local nameResult = MySQL.query.await("SELECT firstname, lastname FROM users WHERE identifier = ?", { cid })
+            if nameResult and nameResult[1] then
+                senderName = string.format("%s %s", nameResult[1].firstname, nameResult[1].lastname)
+            end
+        end
+    end
+
+    local receiverName = "Unknown Receiver"
+    if Config.Framework == "QB" then
+        local result = MySQL.query.await("SELECT charinfo FROM players WHERE citizenid = ?", { targetCid })
+        if result and result[1] then
+            local charinfo = json.decode(result[1].charinfo or "{}")
+            receiverName = string.format("%s %s", charinfo.firstname or "Unknown", charinfo.lastname or "")
+        end
+    elseif Config.Framework == "ESX" then
+        local result = MySQL.query.await("SELECT firstname, lastname FROM users WHERE identifier = ?", { targetCid })
+        if result and result[1] then
+            receiverName = string.format("%s %s", result[1].firstname, result[1].lastname)
+        end
     end
 
     local taxAmount = 0
     if Config.Tax.Enabled and Config.Tax.Percentage > 0 then
         taxAmount = math.floor((Config.Tax.Percentage / 100) * amount)
-        amount = amount + taxAmount 
+        amount = amount + taxAmount
     end
 
     local query = MySQL.query.await(
-        "INSERT INTO bills (amount, reason, job, sender_cid, receiver_cid, date, time, paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO bills (amount, reason, job, sender_cid, sender_name, receiver_cid, receiver_name, date, time, paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         {
-            amount,  
+            amount,
             reason,
             jobName,
-            cid, 
-            targetCid, 
-            os.date("%Y-%m-%d"), 
-            os.date("%H:%M:%S"), 
-            false,
+            cid,
+            senderName,
+            targetCid,
+            receiverName,
+            os.date("%Y-%m-%d"),
+            os.date("%H:%M:%S"),
+            false
         }
     )
 
     if query then
-        local taxMessage = Config.Tax.Enabled and (" (Tax: $%s)"):format(taxAmount) or ""
-        sendToDiscord("SendBill", "Bill Sent", ("**Sender CID**: %s\n**Target CID**: %s\n**Amount**: $%s%s\n**Reason**: %s"):format(cid, targetCid, amount, taxMessage, reason))
+        local taxMessage = Config.Tax.Enabled and (" (Tax: $%d)"):format(taxAmount) or ""
+        local discordMessage = string.format(
+            "**Sender**: %s (CID: %s)\n**Receiver**: %s (CID: %s)\n**Amount**: $%d%s\n**Reason**: %s",
+            senderName, cid, receiverName, targetCid, amount, taxMessage, reason
+        )
+
+        sendToDiscord("SendBill", "Bill Sent", discordMessage)
+    else
+        print("^1[peleg-billing] Failed to insert bill into database.^0")
     end
 
-    TriggerClientEvent("peleg-billing:client:notify", source, "Bill sent successfully")
+    TriggerClientEvent("peleg-billing:client:notify", src, "Bill sent successfully")
 end)
 
 --------------------------------------------------------------------------------
