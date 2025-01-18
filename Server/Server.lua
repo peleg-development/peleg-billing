@@ -132,6 +132,7 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
     
     if bills then
         for i, bill in ipairs(bills) do
+            print(bill.id, bill.reason, bill.amount, bill.sender_name, bill.sender_job, bill.date, bill.time, bill.paid)
             bills[i] = {
                 id = bill.id,
                 amount = bill.amount,
