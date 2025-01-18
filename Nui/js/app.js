@@ -458,7 +458,9 @@ new Vue({
 
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;
-            this.fetchPlayerBills(player.cid);
+            setTimeout(() => {
+                this.fetchPlayerBills(player.cid);
+            }, 500); 
             this.showSelectedPlayerMenu = true;
         },
     
@@ -466,16 +468,11 @@ new Vue({
             fetch(`https://${GetParentResourceName()}/peleg-billing:callback:fetchPlayerBills`, {
                 method: 'POST',
                 body: JSON.stringify({ cid: cid })
-            }).then(resp => {
-                if (!this.selectedPlayerBills) {
-                    this.selectedPlayerBills = [];
-                }
-            });
+            })
         },
         closePlayerBills() {
             this.showSelectedPlayerMenu = false;
             this.selectedPlayer = null;
-            this.selectedPlayerBills = [];
         },
 
         notify({ title, message, type }) {
@@ -494,6 +491,7 @@ new Vue({
         setBills(bills) {
             this.selectedPlayerBills = bills;
         },
+        
         handleKeyPress(event) {
             if (event.key === 'Escape' && this.showbillmenu) {
                 this.closeUI();

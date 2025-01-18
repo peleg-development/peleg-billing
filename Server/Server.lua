@@ -114,32 +114,26 @@ end
 
 RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
     local src = source
-    
+
     local query = [[
-        SELECT 
-            b.*,
-            CONCAT(p1.firstname, ' ', p1.lastname) as sender_name,
-            CONCAT(p2.firstname, ' ', p2.lastname) as receiver_name,
-            p1.job as sender_job
-        FROM bills b
-        LEFT JOIN players p1 ON b.sender_cid = p1.citizenid
-        LEFT JOIN players p2 ON b.receiver_cid = p2.citizenid
-        WHERE b.receiver_cid = ?
-        ORDER BY b.date DESC, b.time DESC
+        SELECT *
+        FROM bills
+        WHERE receiver_cid = ?
+        ORDER BY date DESC, time DESC
     ]]
     
     local bills = MySQL.query.await(query, {targetCid})
-    
+
     if bills then
         for i, bill in ipairs(bills) do
-            print(bill.id, bill.reason, bill.amount, bill.sender_name, bill.sender_job, bill.date, bill.time, bill.paid)
+            print(bill.id, bill.reason, bill.amount, bill.sender_name, bill.job, bill.date, bill.time, bill.paid)
             bills[i] = {
                 id = bill.id,
                 amount = bill.amount,
                 reason = bill.reason,
                 billedBy = {
                     name = bill.sender_name,
-                    job = bill.sender_job
+                    job = bill.job
                 },
                 date = bill.date,
                 time = bill.time,
@@ -147,7 +141,7 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
             }
         end
     end
-    
+
     TriggerClientEvent('peleg-billing:client:receiveBills', src, bills)
 end)
 
