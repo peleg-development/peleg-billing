@@ -33,7 +33,6 @@ end
 --------------------------------------------------------------------------------
 -- Database / MySQL Utility
 --------------------------------------------------------------------------------
--- Adjust per your DB resource (oxmysql, ghmattimysql, mysql-async, etc.)
 
 function GetPlayerBills(cid)
     local unpaidBills = {}
@@ -82,6 +81,7 @@ function GetSocietyBills(job)
             amount = bill.amount,
             reason = bill.reason,
             sender = senderName,
+            billedBy = { name = senderName, cid = bill.sender_cid, job = job },
             receiver = receiverName,
             date = bill.date,
             time = bill.time,

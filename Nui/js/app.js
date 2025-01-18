@@ -376,9 +376,7 @@ new Vue({
                 headers: {
                     'Content-Type': 'application/json'
                 }
-            }).then(() => {
-                SetNuiFocus(false, false); 
-            });
+            })
         },
 
         opentest(data) {
@@ -480,9 +478,7 @@ new Vue({
                     message: message,
                     type: type
                 })
-            }).then(() => {
-                SetNuiFocus(false, false); 
-            });
+            })
         },
         setBills(bills) {
             this.selectedPlayerBills = bills;
