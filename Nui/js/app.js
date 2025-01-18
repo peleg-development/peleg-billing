@@ -458,8 +458,8 @@ new Vue({
 
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;
-            this.showSelectedPlayerMenu = true;
             this.fetchPlayerBills(player.cid);
+            this.showSelectedPlayerMenu = true;
         },
     
         fetchPlayerBills(cid) {
@@ -509,8 +509,8 @@ new Vue({
             if (event.data.type === 'openMe') {
                 const data = event.data.data;
                 this.opentest(data);
-            } else if (data.type === 'updatePlayerBills') {
-                this.setBills(data.bills);
+            } else if (event.data.type === 'updatePlayerBills') {
+                this.setBills(event.data.bills);
             }
         });
         window.addEventListener('keydown', this.handleKeyPress);
