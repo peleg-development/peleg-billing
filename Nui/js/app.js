@@ -239,7 +239,7 @@ new Vue({
                 return;
             }
         
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:billPlayer`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:billPlayer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -260,7 +260,7 @@ new Vue({
         },
 
         refundBill(billId) {
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:refundBill`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:refundBill`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -287,7 +287,7 @@ new Vue({
         markAsPaid(billId) {
             const bill = this.myBills.find(bill => bill.id === billId);
             if (bill) {
-                fetch(`https://${GetParentResourceName()}/krs-billing:callback:checkBalance`, {
+                fetch(`https://${GetParentResourceName()}/peleg-billing:callback:checkBalance`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -299,7 +299,7 @@ new Vue({
                 .then(response => response.json())
                 .then(balanceResp => {
                     if (balanceResp.hasEnough) {
-                        fetch(`https://${GetParentResourceName()}/krs-billing:callback:payBill`, {
+                        fetch(`https://${GetParentResourceName()}/peleg-billing:callback:payBill`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -334,7 +334,7 @@ new Vue({
 
         fetchNearbyPlayers() {
             this.loadingPlayers = true;
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:getNearbyPlayers`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:getNearbyPlayers`, {
                 method: 'POST', 
                 headers: {
                     'Content-Type': 'application/json',
@@ -374,7 +374,7 @@ new Vue({
 
             setTimeout(() => {
 
-                fetch(`https://${GetParentResourceName()}/krs-billing:callback:close`, {
+                fetch(`https://${GetParentResourceName()}/peleg-billing:callback:close`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -427,7 +427,7 @@ new Vue({
                 this.isSearching = false;
             }, 3000); 
     
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:getOnlinePlayers`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:getOnlinePlayers`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ query: this.searchQuery }),
@@ -463,7 +463,7 @@ new Vue({
         },
     
         fetchPlayerBills(cid) {
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:fetchPlayerBills`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:fetchPlayerBills`, {
                 method: 'POST',
                 body: JSON.stringify({ cid: cid })
             }).then(resp => {
@@ -479,7 +479,7 @@ new Vue({
         },
 
         notify({ title, message, type }) {
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:notify`, {
+            fetch(`https://${GetParentResourceName()}/peleg-billing:callback:notify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

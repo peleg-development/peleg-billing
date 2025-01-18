@@ -112,7 +112,7 @@ function GetCid(player)
     return cid
 end
 
-RegisterNetEvent('krs-billing:server:fetchPlayerBills', function(targetCid)
+RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
     local src = source
     
     local query = [[
@@ -147,10 +147,10 @@ RegisterNetEvent('krs-billing:server:fetchPlayerBills', function(targetCid)
         end
     end
     
-    TriggerClientEvent('krs-billing:client:receiveBills', src, bills)
+    TriggerClientEvent('peleg-billing:client:receiveBills', src, bills)
 end)
 
-RegisterNetEvent('krs-billing:server:getOnlinePlayers', function(searchQuery)
+RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     local src = source
     local players = {}
     local lowerQuery = searchQuery:lower() 
@@ -195,7 +195,7 @@ RegisterNetEvent('krs-billing:server:getOnlinePlayers', function(searchQuery)
         end
     end
 
-    TriggerClientEvent('krs-billing:client:receiveOnlinePlayers', src, players)
+    TriggerClientEvent('peleg-billing:client:receiveOnlinePlayers', src, players)
 end)
 
 
@@ -203,7 +203,7 @@ end)
 --------------------------------------------------------------------------------
 -- Billing Logic
 --------------------------------------------------------------------------------
-RegisterNetEvent("krs-billing:server:billPlayer", function(data)
+RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
     local cid       = GetCid(source)
     local targetCid = data.cid
     local reason    = data.reason
@@ -253,13 +253,13 @@ RegisterNetEvent("krs-billing:server:billPlayer", function(data)
         sendToDiscord("SendBill", "Bill Sent", ("**Sender CID**: %s\n**Target CID**: %s\n**Amount**: $%s%s\n**Reason**: %s"):format(cid, targetCid, amount, taxMessage, reason))
     end
 
-    TriggerClientEvent("krs-billing:client:notify", source, "Bill sent successfully")
+    TriggerClientEvent("peleg-billing:client:notify", source, "Bill sent successfully")
 end)
 
 --------------------------------------------------------------------------------
 --  Pay Bill
 --------------------------------------------------------------------------------
-RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
+RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
     local src = source
     local amount, jobName, senderJob, senderName, foundBill = nil, nil, nil, nil, nil
 
@@ -311,7 +311,7 @@ RegisterNetEvent('krs-billing:payBill', function(billId, payFromJobAccount)
     end
 end)
 
-RegisterNetEvent('krs-billing:server:checkBalance', function(amount)
+RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     local src = source
     local hasEnough = false
 
@@ -327,14 +327,14 @@ RegisterNetEvent('krs-billing:server:checkBalance', function(amount)
         end
     end
 
-    TriggerClientEvent('krs-billing:client:checkBalanceResponse', src, hasEnough)
+    TriggerClientEvent('peleg-billing:client:checkBalanceResponse', src, hasEnough)
 end)
 
 
 --------------------------------------------------------------------------------
 -- Refund Bill
 --------------------------------------------------------------------------------
-RegisterNetEvent('krs-billing:refundBill', function(billId)
+RegisterNetEvent('peleg-billing:refundBill', function(billId)
     local src = source
 
     if Config.Framework == "QB" then
@@ -367,7 +367,7 @@ end)
 --------------------------------------------------------------------------------
 -- requestBillingMenu
 --------------------------------------------------------------------------------
-RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
+RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
     local src = source
 
     if Config.Framework == "QB" then
@@ -388,7 +388,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 societyBills = GetSocietyBills(jobName)
             end
 
-            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+            TriggerClientEvent('peleg-billing:openBillingMenu', src, {
                 myBills         = unpaidBills,
                 billingHistory  = billingHistory,
                 societyBills    = societyBills,
@@ -398,7 +398,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 cid             = citizenId
             })
         else
-            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+            TriggerClientEvent('peleg-billing:openBillingMenu', src, {
                 myBills         = unpaidBills,
                 billingHistory  = billingHistory,
                 societyBills    = {},
@@ -428,7 +428,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 societyBills = GetSocietyBills(jobName)
             end
 
-            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+            TriggerClientEvent('peleg-billing:openBillingMenu', src, {
                 myBills         = unpaidBills,
                 billingHistory  = billingHistory,
                 societyBills    = societyBills,
@@ -438,7 +438,7 @@ RegisterNetEvent('krs-billing:requestBillingMenu', function(citizenId)
                 cid             = citizenId
             })
         else
-            TriggerClientEvent('krs-billing:openBillingMenu', src, {
+            TriggerClientEvent('peleg-billing:openBillingMenu', src, {
                 myBills         = unpaidBills,
                 billingHistory  = billingHistory,
                 societyBills    = {},
@@ -455,7 +455,7 @@ end)
 -- Callbacks for retrieving player names
 --------------------------------------------------------------------------------
 if Config.Framework == "QB" then
-    QBCore.Functions.CreateCallback('krs-billing:getPlayerName', function(source, cb, serverId)
+    QBCore.Functions.CreateCallback('peleg-billing:getPlayerName', function(source, cb, serverId)
         print(string.format("[peleg-billing] Server callback 'getPlayerName' triggered for serverId %d.", serverId))
         local targetPlayer = QBCore.Functions.GetPlayer(tonumber(serverId))
         if targetPlayer then
@@ -470,7 +470,7 @@ if Config.Framework == "QB" then
         end
     end)
 elseif Config.Framework == "ESX" then
-    RegisterNetEvent('krs-billing:getPlayerNameServer', function(serverId, callback)
+    RegisterNetEvent('peleg-billing:getPlayerNameServer', function(serverId, callback)
         local src = source
         local xPlayer = ESX.GetPlayerFromId(serverId)
         if xPlayer then
@@ -487,7 +487,7 @@ end
 -- ESX Callback for checking items (if needed)
 --------------------------------------------------------------------------------
 if Config.Framework == "ESX" then
-    ESX.RegisterServerCallback('krs-billing:hasItem', function(source, cb, itemName)
+    ESX.RegisterServerCallback('peleg-billing:hasItem', function(source, cb, itemName)
         local xPlayer = ESX.GetPlayerFromId(source)
         if xPlayer then
             local hasItem = xPlayer.getInventoryItem(itemName).count > 0

@@ -62,24 +62,24 @@ local function OpenUi(data)
     SetNuiFocus(true, true)
 end
 
-RegisterNetEvent('krs-billing:openBillingMenu', function(data)
+RegisterNetEvent('peleg-billing:openBillingMenu', function(data)
     OpenUi(data)
 end)
 
-RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
+RegisterNetEvent('peleg-billing:client:receiveOnlinePlayers', function(players)
     SendNUIMessage({
         type = 'updatePlayers',
         players = players
     })
 end)
 
-RegisterNetEvent('krs-billing:client:notify', function(message, type)
+RegisterNetEvent('peleg-billing:client:notify', function(message, type)
     NotifyPlayer(message, type)
 end)
 
-RegisterNUICallback('krs-billing:callback:refundBill', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:refundBill', function(data, cb)
     local billId = data.billId
-    TriggerServerEvent('krs-billing:refundBill', billId)
+    TriggerServerEvent('peleg-billing:refundBill', billId)
     cb('ok')
 end)
 
@@ -87,54 +87,54 @@ RegisterNUICallback('close', function()
     SetNuiFocus(false, false)
 end)
 
-RegisterNUICallback('krs-billing:callback:close', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:close', function(data, cb)
     SetNuiFocus(false, false)
     cb('ok')
 end)
 
-RegisterNUICallback('krs-billing:callback:billPlayer', function(data, cb)
-    TriggerServerEvent('krs-billing:server:billPlayer', data)
+RegisterNUICallback('peleg-billing:callback:billPlayer', function(data, cb)
+    TriggerServerEvent('peleg-billing:server:billPlayer', data)
     cb("ok")
 end)
 
-RegisterNUICallback('krs-billing:callback:notify', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:notify', function(data, cb)
     NotifyPlayer(data.message, data.type)
     cb("ok")
 end)
 
-RegisterNUICallback('krs-billing:callback:payBill', function(data, cb)
-    TriggerServerEvent('krs-billing:payBill', data.billId, data.payFromJobAccount)
+RegisterNUICallback('peleg-billing:callback:payBill', function(data, cb)
+    TriggerServerEvent('peleg-billing:payBill', data.billId, data.payFromJobAccount)
     cb("ok")
 end)
 
-RegisterNUICallback('krs-billing:callback:checkBalance', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:checkBalance', function(data, cb)
     local amount = tonumber(data.amount)
 
-    TriggerServerEvent('krs-billing:server:checkBalance', amount)
+    TriggerServerEvent('peleg-billing:server:checkBalance', amount)
 
-    RegisterNetEvent('krs-billing:client:checkBalanceResponse', function(hasEnough)
+    RegisterNetEvent('peleg-billing:client:checkBalanceResponse', function(hasEnough)
         cb({ hasEnough = hasEnough })
     end)
 end)
 
-RegisterNUICallback('krs-billing:callback:getOnlinePlayers', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:getOnlinePlayers', function(data, cb)
     local searchQuery = data.query or ""
-    TriggerServerEvent('krs-billing:server:getOnlinePlayers', searchQuery)
+    TriggerServerEvent('peleg-billing:server:getOnlinePlayers', searchQuery)
 
-    RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
+    RegisterNetEvent('peleg-billing:client:receiveOnlinePlayers', function(players)
         cb(players) 
     end)
 end)
 
 
-RegisterNUICallback('krs-billing:callback:fetchPlayerBills', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:fetchPlayerBills', function(data, cb)
     local cid = data.cid
-    TriggerServerEvent('krs-billing:server:fetchPlayerBills', cid, function(bills)
+    TriggerServerEvent('peleg-billing:server:fetchPlayerBills', cid, function(bills)
         cb({ bills = bills })
     end)
 end)
 
-RegisterNetEvent('krs-billing:client:receiveBills', function(bills)
+RegisterNetEvent('peleg-billing:client:receiveBills', function(bills)
     SendNUIMessage({
         type = 'updatePlayerBills',
         bills = bills
@@ -155,7 +155,7 @@ local function serializeTable(tbl)
     end
 end
 
-RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
+RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb)
     local status, err = pcall(function()
         print("[peleg-billing] NUI callback 'getNearbyPlayers' triggered.")
         local players = {}
@@ -187,7 +187,7 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
 
         for _, serverId in ipairs(nearbyPlayers) do
             if Config.Framework == "QB" then
-                QBCore.Functions.TriggerCallback('krs-billing:getPlayerName', function(response)
+                QBCore.Functions.TriggerCallback('peleg-billing:getPlayerName', function(response)
                     print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
                     table.insert(players, { id = serverId, name = response.name, cid = response.cid })
                     processed = processed + 1
@@ -199,7 +199,7 @@ RegisterNUICallback('krs-billing:callback:getNearbyPlayers', function(data, cb)
                     end
                 end, serverId)
             elseif Config.Framework == "ESX" then
-                TriggerServerEvent('krs-billing:getPlayerNameServer', serverId, function(response)
+                TriggerServerEvent('peleg-billing:getPlayerNameServer', serverId, function(response)
                     print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
                     table.insert(players, { id = serverId, name = response.name, cid = response.cid })
                     processed = processed + 1
@@ -229,14 +229,14 @@ if Config.Framework == "QB" then
 
         if not Config.BillingItem or Config.BillingItem == "" then
             local playerData = QBCore.Functions.GetPlayerData()
-            TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
+            TriggerServerEvent('peleg-billing:requestBillingMenu', playerData.citizenid)
             return
         end
     
         QBCore.Functions.TriggerCallback("QBCore:HasItem", function(hasItem)
             if hasItem then
                 local playerData = QBCore.Functions.GetPlayerData()
-                TriggerServerEvent('krs-billing:requestBillingMenu', playerData.citizenid)
+                TriggerServerEvent('peleg-billing:requestBillingMenu', playerData.citizenid)
             else
                 QBCore.Functions.Notify("You need a billing tablet to open the menu!", "error")
             end
@@ -248,13 +248,13 @@ elseif Config.Framework == "ESX" then
         local playerPed = PlayerPedId()
 
         if not Config.BillingItem or Config.BillingItem == "" then
-            TriggerServerEvent('krs-billing:requestBillingMenu')
+            TriggerServerEvent('peleg-billing:requestBillingMenu')
             return
         end
 
-        ESX.TriggerServerCallback("krs-billing:hasItem", function(hasItem)
+        ESX.TriggerServerCallback("peleg-billing:hasItem", function(hasItem)
             if hasItem then
-                TriggerServerEvent('krs-billing:requestBillingMenu')
+                TriggerServerEvent('peleg-billing:requestBillingMenu')
             else
                 ESX.ShowNotification("You need a billing tablet to open the menu!", false, false, 140)
             end

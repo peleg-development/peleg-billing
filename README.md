@@ -2,8 +2,8 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
-[![Issues](https://img.shields.io/github/issues/ku-development/krs-billing)](https://github.com/ku-development/krs-billing/issues)
-[![Contributors](https://img.shields.io/github/contributors/ku-development/krs-billing)](none)
+[![Issues](https://img.shields.io/github/issues/ku-development/peleg-billing)](https://github.com/ku-development/peleg-billing/issues)
+[![Contributors](https://img.shields.io/github/contributors/ku-development/peleg-billing)](none)
 
 
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
