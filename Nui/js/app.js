@@ -500,12 +500,6 @@ new Vue({
               else if (this.showSelectedPlayerMenu) {
                 this.showSelectedPlayerMenu = false;
               } 
-              else if (this.showSocietyMenu) {
-                this.showSocietyMenu = false;
-              }
-              else if (this.showInspectCitizen) {
-                this.showInspectCitizen = false;
-              }
               else {
                 this.closeUI();
               }
