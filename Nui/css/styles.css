@@ -65,7 +65,20 @@ body {
     min-height: 100vh;
 }
 
-/* Add these transition classes */
+.dashboard {
+    user-select: none;
+    width: 1324px;
+    height: 768px;
+    background: var(--color-background-dark);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 40px var(--color-shadow);
+    display: flex;
+    transform-origin: center;
+    will-change: transform, opacity;
+}
+
+/* Basic Trans */
 .slide-fade-enter-active {
     animation: slideIn 0.3s ease-out;
 }
@@ -74,7 +87,6 @@ body {
     animation: slideOut 0.3s ease-in;
 }
 
-/* Define keyframe animations */
 @keyframes slideIn {
     from {
         transform: scale(0.95) translateY(10px);
@@ -97,28 +109,7 @@ body {
     }
 }
 
-/* Update dashboard styles */
-.dashboard {
-    user-select: none;
-    width: 1324px;
-    height: 768px;
-    background: var(--color-background-dark);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 0 40px var(--color-shadow);
-    display: flex;
-    transform-origin: center;
-    will-change: transform, opacity;
-}
 
-body {
-    /* background-color: var(--color-background); */
-    color: var(--color-text);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
 .sidebar {
     width: 220px;
     background: var(--color-sidebar);

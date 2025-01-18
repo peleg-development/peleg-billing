@@ -16,7 +16,7 @@ new Vue({
     data: {
         Cid: '12345',
         view: 'myBills',
-        showbillmenu: false,
+        showbillmenu: true,
         playerSearch: '',
         billReason: '',
         billAmount: 243324,
