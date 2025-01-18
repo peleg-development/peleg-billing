@@ -409,24 +409,18 @@ new Vue({
             setTimeout(() => {
                 this.isSearching = false;
             }, 3000); 
- 
-            this.filteredPlayers = []; 
+    
             fetch(`https://${GetParentResourceName()}/krs-billing:callback:getOnlinePlayers`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: this.searchQuery }), 
+                body: JSON.stringify({ query: this.searchQuery }),
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`Network response was not ok (${response.status})`);
-                    }
-                    return response.json();
-                })
+                .then((response) => response.json())
                 .then((players) => {
                     if (Array.isArray(players) && players.length > 0) {
-                        this.filteredPlayers = players; 
+                        this.players = players; 
                     } else {
-                        this.filteredPlayers = [];
+                        this.players = []; 
                         this.notify({
                             title: "No Results",
                             message: "No players found matching your search.",
@@ -443,7 +437,7 @@ new Vue({
                     });
                 });
         },
-    
+
 
         selectPlayerForInspection(player) {
             this.selectedPlayer = player;

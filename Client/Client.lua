@@ -118,9 +118,15 @@ RegisterNUICallback('krs-billing:callback:checkBalance', function(data, cb)
 end)
 
 RegisterNUICallback('krs-billing:callback:getOnlinePlayers', function(data, cb)
-    TriggerServerEvent('krs-billing:server:getOnlinePlayers')
-    cb({})
+    local searchQuery = data.query or ""
+    TriggerServerEvent('krs-billing:server:getOnlinePlayers', searchQuery)
+
+    RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
+        cb(players) 
+        RemoveEventHandler('krs-billing:client:receiveOnlinePlayers')
+    end)
 end)
+
 
 RegisterNUICallback('krs-billing:callback:fetchPlayerBills', function(data, cb)
     local cid = data.cid

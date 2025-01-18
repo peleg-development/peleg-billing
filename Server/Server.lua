@@ -150,9 +150,10 @@ RegisterNetEvent('krs-billing:server:fetchPlayerBills', function(targetCid)
     TriggerClientEvent('krs-billing:client:receiveBills', src, bills)
 end)
 
-RegisterNetEvent('krs-billing:server:getOnlinePlayers', function()
+RegisterNetEvent('krs-billing:server:getOnlinePlayers', function(searchQuery)
     local src = source
     local players = {}
+    local lowerQuery = searchQuery:lower() 
 
     if Config.Framework == "QB" then
         local QBPlayers = QBCore.Functions.GetQBPlayers()
@@ -160,11 +161,16 @@ RegisterNetEvent('krs-billing:server:getOnlinePlayers', function()
             local playerData = player.PlayerData
             local charInfo = playerData.charinfo
             if charInfo then
-                table.insert(players, {
-                    id = playerData.source,
-                    name = ("%s %s"):format(charInfo.firstname, charInfo.lastname),
-                    cid = playerData.citizenid
-                })
+                local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
+                local cid = playerData.citizenid
+
+                if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
+                    table.insert(players, {
+                        id = playerData.source,
+                        name = fullName,
+                        cid = cid
+                    })
+                end
             end
         end
     elseif Config.Framework == "ESX" then
@@ -173,19 +179,26 @@ RegisterNetEvent('krs-billing:server:getOnlinePlayers', function()
             local result = MySQL.query.await('SELECT firstname, lastname FROM users WHERE identifier = ?', {
                 xPlayer.identifier
             })
-            
+
             if result and result[1] then
-                table.insert(players, {
-                    id = xPlayer.source,
-                    name = ("%s %s"):format(result[1].firstname, result[1].lastname),
-                    cid = xPlayer.identifier
-                })
+                local fullName = ("%s %s"):format(result[1].firstname, result[1].lastname)
+                local cid = xPlayer.identifier
+
+                if fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery) then
+                    table.insert(players, {
+                        id = xPlayer.source,
+                        name = fullName,
+                        cid = cid
+                    })
+                end
             end
         end
     end
 
     TriggerClientEvent('krs-billing:client:receiveOnlinePlayers', src, players)
 end)
+
+
 
 --------------------------------------------------------------------------------
 -- Billing Logic
