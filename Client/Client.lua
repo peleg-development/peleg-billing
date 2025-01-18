@@ -123,7 +123,6 @@ RegisterNUICallback('krs-billing:callback:getOnlinePlayers', function(data, cb)
 
     RegisterNetEvent('krs-billing:client:receiveOnlinePlayers', function(players)
         cb(players) 
-        RemoveEventHandler('krs-billing:client:receiveOnlinePlayers')
     end)
 end)
 
