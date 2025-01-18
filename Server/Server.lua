@@ -137,7 +137,7 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
                 },
                 date = bill.date,
                 time = bill.time,
-                paid = bill.paid == 1
+                paid = (bill.paid == true or bill.paid == 1)
             }
         end
     end
