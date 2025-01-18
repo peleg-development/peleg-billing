@@ -13,10 +13,12 @@
 </head>
 
 <body>
-    <div id="app" :style="scaledStyle">
-        <transition name="slide-fade">
-            <div v-if="showbillmenu" class="dashboard" >
-        </transition> 
+    <div id="app">
+        <transition name="fade" mode="out-in">
+            <div v-if="showbillmenu" class="dashboard"  >
+                <button class="close-btn" @click="closeUI">
+                    <i class="fas fa-times"></i>
+                </button>
         <div class="sidebar">
             <div class="logo">
                 <i class="fas fa-file-invoice-dollar"></i>
@@ -351,12 +353,9 @@
                     <p>{{ Locale.get('trySearchingDifferentName', 'Try searching for a different name or CID.') }}</p>
                 </div>
             </div>
-            
- 
         </div>
     </div>
-    </transition>
-
+</transition> 
     
     <!-- Bill Details Modal -->
     <transition name="fade">

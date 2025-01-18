@@ -371,12 +371,29 @@ new Vue({
         closeUI() {
             this.setView('myBills');
             this.showbillmenu = false;
-            fetch(`https://${GetParentResourceName()}/krs-billing:callback:close`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+
+            setTimeout(() => {
+
+                fetch(`https://${GetParentResourceName()}/krs-billing:callback:close`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+            }, 300); 
+        },
+        created() {
+            this.$options.transitions = {
+                fade: {
+                    beforeLeave(el) {
+                        el.style.display = 'flex';
+                    },
+                    afterLeave(el) {
+                        el.style.display = 'none';
+                    }
                 }
-            })
+            }
         },
 
         opentest(data) {
@@ -476,6 +493,15 @@ new Vue({
         },
         setBills(bills) {
             this.selectedPlayerBills = bills;
+        },
+        handleKeyPress(event) {
+            if (event.key === 'Escape' && this.showbillmenu) {
+                this.closeUI();
+            }
+        },
+    
+        beforeDestroy() {
+            window.removeEventListener('keydown', this.handleKeyPress);
         }
     },
     mounted() {
@@ -487,6 +513,7 @@ new Vue({
                 this.setBills(data.bills);
             }
         });
+        window.addEventListener('keydown', this.handleKeyPress);
     },
     
 });

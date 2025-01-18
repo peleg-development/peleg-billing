@@ -65,6 +65,39 @@ body {
     min-height: 100vh;
 }
 
+/* Add these transition classes */
+.slide-fade-enter-active {
+    animation: slideIn 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+    animation: slideOut 0.3s ease-in;
+}
+
+/* Define keyframe animations */
+@keyframes slideIn {
+    from {
+        transform: scale(0.95) translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0.95) translateY(10px);
+        opacity: 0;
+    }
+}
+
+/* Update dashboard styles */
 .dashboard {
     user-select: none;
     width: 1324px;
@@ -74,8 +107,18 @@ body {
     overflow: hidden;
     box-shadow: 0 0 40px var(--color-shadow);
     display: flex;
+    transform-origin: center;
+    will-change: transform, opacity;
 }
 
+body {
+    /* background-color: var(--color-background); */
+    color: var(--color-text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
 .sidebar {
     width: 220px;
     background: var(--color-sidebar);
@@ -1386,4 +1429,41 @@ body {
 
 .no-data-message p {
     font-size: 1rem;
+}
+
+.close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: var(--color-sidebar);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.close-btn:hover {
+    color: var(--color-text);
+    background: var(--color-sidebar-hover);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.close-btn:active {
+    transform: translateY(1px);
+}
+
+.close-btn i {
+    transition: transform 0.2s ease;
+}
+
+.close-btn:hover i {
+    transform: rotate(90deg);
 }
