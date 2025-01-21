@@ -1,4 +1,4 @@
-# Peleg-Billing | V1.0 | Almost Finished!
+# Peleg-Billing | V1.0 | Working No Bugs ( new updates will comeout soon ) !
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
