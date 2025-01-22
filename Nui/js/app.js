@@ -25,6 +25,9 @@ new Vue({
         showSocietyMenu: false, 
         showInspectCitizen: false,
         canBill: false,
+        historySearch: '',  
+        societySearch: '',  
+        playerBillSearch: '',
         myBills: [
             // {
             //     id: 'bill1',
@@ -210,10 +213,51 @@ new Vue({
                 transform: `scale(1.0)`,
                 transformOrigin: 'center'
             }
-        }
+        },
+        filteredHistoryBills() {
+            if (!this.historySearch) return this.billingHistory;
+            const search = this.historySearch.toLowerCase();
+            return this.billingHistory.filter(bill => 
+                bill.reason.toLowerCase().includes(search) ||
+                bill.billedBy.name.toLowerCase().includes(search) ||
+                bill.billedBy.job.toLowerCase().includes(search) ||
+                bill.amount.toString().includes(search) ||
+                bill.date.toLowerCase().includes(search)
+            );
+        },
+
+        filteredPlayerBills() {
+            if (!this.playerBillSearch) return this.selectedPlayerBills;
+            const search = this.playerBillSearch.toLowerCase();
+            return this.selectedPlayerBills.filter(bill => 
+                bill.reason.toLowerCase().includes(search) ||
+                bill.billedBy.name.toLowerCase().includes(search) ||
+                bill.billedBy.job.toLowerCase().includes(search) ||
+                bill.amount.toString().includes(search) ||
+                bill.date.toLowerCase().includes(search)
+            );
+        },
+        
+        filteredSocietyBills() {
+            if (!this.societySearch) return this.societyBills;
+            const search = this.societySearch.toLowerCase();
+            return this.societyBills.filter(bill => 
+                bill.reason.toLowerCase().includes(search) ||
+                bill.billedBy.name.toLowerCase().includes(search) ||
+                bill.billedBy.job.toLowerCase().includes(search) ||
+                bill.amount.toString().includes(search) ||
+                bill.date.toLowerCase().includes(search)
+            );
+        },
     },
     methods: {
+        clearHistorySearch() {
+            this.historySearch = '';
+        },
         
+        clearSocietySearch() {
+            this.societySearch = '';
+        },
         selectPlayer(player) {
             this.selectedPlayer = player;
             this.playerSearch = '';
