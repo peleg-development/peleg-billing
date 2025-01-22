@@ -1,9 +1,9 @@
-# Peleg-Billing | V1.0 | Working No Bugs ( new updates will comeout soon ) !
+# Peleg-Billing | v1.0.0 !
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
-[![Issues](https://img.shields.io/github/issues/ku-development/peleg-billing)](https://github.com/ku-development/peleg-billing/issues)
-[![Contributors](https://img.shields.io/github/contributors/ku-development/peleg-billing)](none)
+[![Issues](https://img.shields.io/github/issues/ku-development/peleg-billing)](https://github.com/peleg-development/peleg-billing/issues)
+[![Contributors](https://img.shields.io/github/contributors/peleg-development/peleg-billing)](none)
 
 
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
@@ -25,7 +25,7 @@ Elevate your server’s job experience with **Peleg-Billing**, an advanced billi
 
 In many servers, the billing systems are always boaring and ugly or just buggy and usless in this system the money will be taken and received to the boss menu directly...
 
-## Exports
+## Exports ( Not working for now )
 
 ### Server-side:
 ```lua
@@ -49,13 +49,9 @@ data = {
 
 
 ### Preview
-![image](https://github.com/user-attachments/assets/375bfedb-1e8c-470f-a7ee-d0dadbddbe1c)
-![image](https://github.com/user-attachments/assets/b09a3e71-4436-4c64-bb38-fa03626ea38f)
-![image](https://github.com/user-attachments/assets/73fcf9b9-6ca2-46c7-a274-d82353180d6c)
-![image](https://github.com/user-attachments/assets/9ded02a7-4d04-4413-910c-50d79de9fda9)
-![image](https://github.com/user-attachments/assets/779313d1-1202-4ca4-ac96-fe6ea224308f)
-![image](https://github.com/user-attachments/assets/77468abf-1d5f-4143-8c89-17d86ef4803e)
-![image](https://github.com/user-attachments/assets/c427789a-dbd5-4498-9bf4-91601e3c4e77)
-![image](https://github.com/user-attachments/assets/4c7f5e7f-6362-405d-a99e-bbe395491492)
-![image](https://github.com/user-attachments/assets/caff4319-f2a2-4c8f-9630-f4f6f3703988)
+![image](https://github.com/user-attachments/assets/ae1720be-69c5-4554-9d2a-5da84a618529)
+![image](https://github.com/user-attachments/assets/6faad8d9-c8a9-45bd-b605-fcad2f7bcaa8)
+![image](https://github.com/user-attachments/assets/83ce2000-8682-4552-be2e-3dc727555dac)
+![image](https://github.com/user-attachments/assets/cdf1b8ac-aac8-41d7-9f0e-f882c80da6a9)
+![image](https://github.com/user-attachments/assets/e4f06956-cd0e-47f0-a014-700a4b38e5ca)
 
