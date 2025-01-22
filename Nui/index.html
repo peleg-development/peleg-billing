@@ -370,7 +370,85 @@
         </div>
     </div>
 </transition> 
-    
+    <!-- Bill Details Modal -->
+    <transition name="fade">
+        <div v-if="showBillDetails" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2>{{ Locale.get('billDetailsHeading','Bill Details') }}</h2>
+                    <button @click="closeDetails" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('amountLabel','Amount:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{
+                            Locale.get('currencySymbol','$')
+                            }}{{ selectedBill.amount }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('reasonLabel','Reason:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.reason }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('sentByLabel','From:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.billedBy.job }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('billedByLabel','Billed by:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.billedBy.name }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('dateLabel','Date:') }}
+                        </span>
+                        <span class="detail-value">
+                            {{ selectedBill.date }} | {{ selectedBill.time }}
+                        </span>
+                    </div>
+                    <div class="bill-detail-item">
+                        <span class="detail-label">
+                            {{ Locale.get('statusLabel','Status:') }}
+                        </span>
+                        <span class="detail-value" :class="{ 'status-paid': selectedBill.paid }">
+                            {{
+                            selectedBill.paid
+                            ? Locale.get('paidStatus','Paid')
+                            : Locale.get('pendingStatus','Pending')
+                            }}
+                        </span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button v-if="!selectedBill.paid" @click="markAsPaid(selectedBill.id)" class="btn-pay">
+                        <i class="fas fa-check"></i>
+                        {{ Locale.get('markAsPaidButton','Mark as Paid') }}
+                    </button>
+                    <button @click="closeDetails" class="btn-close">
+                        <i class="fas fa-times"></i>
+                        {{ Locale.get('closeButton','Close') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
   
     <!-- Player Bills Overlay -->
     <transition name="fade">
