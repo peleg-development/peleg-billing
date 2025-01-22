@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
-[![Issues](https://img.shields.io/github/issues/ku-development/peleg-billing)](https://github.com/peleg-development/peleg-billing/issues)
+[![Issues](https://img.shields.io/github/issues/peleg-development/peleg-billing)](https://github.com/peleg-development/peleg-billing/issues)
 [![Contributors](https://img.shields.io/github/contributors/peleg-development/peleg-billing)](none)
 
 
