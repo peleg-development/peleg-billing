@@ -388,57 +388,133 @@ end)
 --------------------------------------------------------------------------------
 --  Pay Bill
 --------------------------------------------------------------------------------
-RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
+RegisterNetEvent('peleg-billing:refundBill', function(billId)
     local src = source
-    local amount, jobName, senderJob, senderName, foundBill = nil, nil, nil, nil, nil
+    local framework = Config.Framework  
 
-    local bill = MySQL.Sync.fetchAll('SELECT * FROM bills WHERE id = ?', {billId})
-    if bill and bill[1] then
-        foundBill = bill[1]
-        amount = tonumber(bill[1].amount) 
-        jobName = bill[1].job
-    end
-
-    if not foundBill then
-        if Config.Framework == "QB" then
+    local billResult = MySQL.Sync.fetchAll('SELECT * FROM bills WHERE id = ?', { billId })
+    if not billResult or not billResult[1] then
+        if framework == 'QB' then
             TriggerClientEvent('QBCore:Notify', src, 'Bill not found', 'error')
-        elseif Config.Framework == "ESX" then
+        else
             TriggerClientEvent('esx:showNotification', src, 'Bill not found')
         end
         return
     end
 
-    if Config.Framework == "QB" then
-        local xPlayer = QBCore.Functions.GetPlayer(src)
-        if xPlayer.Functions.RemoveMoney('cash', amount) or xPlayer.Functions.RemoveMoney('bank', amount) then
-            TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount)
-            MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-            TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
-            sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
+    local billInfo = billResult[1]
+    local jobName = billInfo.job
+    local amount = tonumber(billInfo.amount)
+    local payerIdentifier = billInfo.payer_identifier 
+    local isPaid = billInfo.paid  
+
+    if not amount or not payerIdentifier then
+        if framework == 'QB' then
+            TriggerClientEvent('QBCore:Notify', src, 'Invalid bill data', 'error')
         else
-            TriggerClientEvent('QBCore:Notify', src, 'Not enough cash to pay the bill', 'error')
+            TriggerClientEvent('esx:showNotification', src, 'Invalid bill data')
+        end
+        return
+    end
+
+    if framework == 'QB' then
+        local xBoss = QBCore.Functions.GetPlayer(src)
+        if not xBoss then
+            TriggerClientEvent('QBCore:Notify', src, 'Player not found', 'error')
+            return
         end
 
-    elseif Config.Framework == "ESX" then
-        local xPlayer = ESX.GetPlayerFromId(src)
-        local xPlayerJob = xPlayer.job
-        if xPlayer.getMoney() >= amount then
-            xPlayer.removeMoney(amount)
-            TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
-                if account then
-                    account.addMoney(amount)
-                    MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                    TriggerClientEvent('esx:showNotification', src, 'Bill paid from your cash and credited to sender society')
-                    sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
-                else
-                    TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
-                end
-            end)
-        else
-            TriggerClientEvent('esx:showNotification', src, 'Not enough cash to pay the bill')
+        if xBoss.PlayerData.job.name ~= jobName or not xBoss.PlayerData.job.isboss then
+            TriggerClientEvent('QBCore:Notify', src, 'You do not have permission to refund this bill', 'error')
+            return
         end
+
+        TriggerEvent('qb-bossmenu:server:removeAccountMoney', jobName, amount)
+
+        local xPayer = nil
+        for _, playerId in pairs(QBCore.Functions.GetPlayers()) do
+            local xTarget = QBCore.Functions.GetPlayer(playerId)
+            if xTarget and tostring(xTarget.PlayerData.citizenid) == tostring(payerIdentifier) then
+                xPayer = xTarget
+                break
+            end
+        end
+
+        if xPayer then
+            xPayer.Functions.AddMoney('bank', amount, 'bill-refund')
+            TriggerClientEvent('QBCore:Notify', xPayer.PlayerData.source, 
+                ('You have been refunded $%d'):format(amount), 'success'
+            )
+        else
+            MySQL.Async.execute(
+                'UPDATE players SET money = JSON_SET(money, "$.bank", JSON_EXTRACT(money, "$.bank") + ?) WHERE citizenid = ?',
+                { amount, payerIdentifier }
+            )
+        end
+
+        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', { false, billId })
+
+        TriggerClientEvent('QBCore:Notify', src, ('Bill (ID: %d) refunded successfully'):format(billId), 'success')
+        sendToDiscord(
+            "RefundBill",
+            "Bill Refunded",
+            ("Bill ID %d ($%d) refunded by %s"):format(billId, amount, xBoss.PlayerData.name)
+        )
+
+    elseif framework == 'ESX' then
+        local xBoss = ESX.GetPlayerFromId(src)
+        if not xBoss then
+            TriggerClientEvent('esx:showNotification', src, 'Boss player not found')
+            return
+        end
+
+        if xBoss.job.name ~= jobName or xBoss.job.grade_name ~= 'boss' then
+            TriggerClientEvent('esx:showNotification', src, 'You do not have boss permissions to refund this bill')
+            return
+        end
+
+        TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
+            if not account then
+                TriggerClientEvent('esx:showNotification', src, 'Society account not found')
+                return
+            end
+
+
+            account.removeMoney(amount)
+        end)
+
+        local xPayer = nil
+        for _, playerId in pairs(ESX.GetPlayers()) do
+            local xTarget = ESX.GetPlayerFromId(playerId)
+            if xTarget and tostring(xTarget.identifier) == tostring(payerIdentifier) then
+                xPayer = xTarget
+                break
+            end
+        end
+
+        if xPayer then
+            xPayer.addMoney(amount)
+            TriggerClientEvent('esx:showNotification', xPayer.source, 
+                ('You have been refunded $%d'):format(amount)
+            )
+        else
+            MySQL.Async.execute(
+                'UPDATE users SET bank = bank + ? WHERE identifier = ?',
+                { amount, payerIdentifier }
+            )
+        end
+
+        MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', { false, billId })
+
+        TriggerClientEvent('esx:showNotification', src, ('Bill (ID: %d) refunded successfully'):format(billId))
+        sendToDiscord(
+            "RefundBill",
+            "Bill Refunded",
+            ("Bill ID %d ($%d) refunded by %s"):format(billId, amount, xBoss.getName())
+        )
     end
 end)
+
 
 RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     local src = source

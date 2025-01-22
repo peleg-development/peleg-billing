@@ -16,6 +16,9 @@
     <div id="app">
         <transition name="fade" mode="out-in">
             <div v-if="showbillmenu" class="dashboard"  >
+                <button class="close-btn" @click="closeUI">
+                    <i class="fas fa-times"></i>
+                </button>
         <div class="sidebar">
             <div class="logo">
                 <i class="fas fa-file-invoice-dollar"></i>
@@ -167,7 +170,6 @@
 
             <!-- Society Bills View -->
             <div v-if="view === 'societyBills'" class="content-section">
-                <h2>{{ Locale.get('societyBillsHeading', 'Society Bills') }}</h2>
                 <div class="search-wrapper global-search">
                     <i class="fas fa-search"></i>
                     <input 
@@ -177,6 +179,7 @@
                         class="search-input"
                     />
                 </div>
+                <h2>{{ Locale.get('societyBillsHeading', 'Society Bills') }}</h2>
                 <div v-if="societyBills.length === 0" class="no-data-message">
                     <i class="fas fa-building"></i>
                     <h3>{{ Locale.get('noSocietyBills', 'No Society Bills') }}</h3>
@@ -340,6 +343,7 @@
                         />
                     </div>
                     <p v-if="isSearching" class="cooldown-message">
+                        Please wait before searching again...
                     </p>
                 </div>
             
@@ -370,6 +374,7 @@
         </div>
     </div>
 </transition> 
+    
     <!-- Bill Details Modal -->
     <transition name="fade">
         <div v-if="showBillDetails" class="modal-overlay">
@@ -449,7 +454,6 @@
             </div>
         </div>
     </transition>
-  
     <!-- Player Bills Overlay -->
     <transition name="fade">
     <div v-if="showSelectedPlayerMenu" class="playerbills-overlay">
@@ -460,9 +464,8 @@
                     Locale.get('billsFor','Bills for')
                     }} {{ selectedPlayer.name }}
                 </h2>
-                
             </div>
-
+            
             <div class="inspect-player-shreach">
                 <div class="search-wrapper global-search">
                     <i class="fas fa-search"></i>
@@ -476,7 +479,7 @@
             </div>
 
             <div class="playerbills-body">
-                <div v-if="filteredPlayerBills.length > 0" class="playerbills-cards">
+                <div v-if="selectedPlayerBills.length > 0" class="playerbills-cards">
                     <div v-for="bill in filteredPlayerBills" :key="bill.id" class="playerbills-card">
                         <div class="playerbills-card-header">
                           <div class="playerbills-amount">

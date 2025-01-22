@@ -57,6 +57,7 @@
     --color-scrollbar-thumb: #303236;
     --color-scrollbar-thumb-hover: #3fa1f8;
   
+    /* Base responsive settings */
     --sidebar-width: 220px;
     --sidebar-collapsed-width: 80px;
   }
@@ -764,9 +765,8 @@ body {
     border: 1px solid var(--color-border);
     border-radius: 20px;
     width: 90%;
-    height: 100px;
     max-width: 500px;
-    overflow: scroll;
+    overflow: hidden;
 }
 
 .modal-header {
@@ -821,7 +821,7 @@ body {
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-    width: 2px;
+    width: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -878,7 +878,16 @@ body {
     color: var(--color-text-secondary);
 }
 
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
 
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+}
 
 .slide-fade-enter-active,
 .slide-fade-leave-active {
@@ -1389,7 +1398,7 @@ body {
 }
 
 .playerbills-body::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
 }
 
 .playerbills-body::-webkit-scrollbar-track {
@@ -1432,7 +1441,7 @@ body {
 .close-btn {
     position: absolute;
     top: 12px;
-    right: 19px;
+    right: 12px;
     width: 32px;
     height: 32px;
     background: var(--color-sidebar);
