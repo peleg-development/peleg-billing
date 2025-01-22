@@ -170,6 +170,7 @@
 
             <!-- Society Bills View -->
             <div v-if="view === 'societyBills'" class="content-section">
+                <h2>{{ Locale.get('societyBillsHeading', 'Society Bills') }}</h2>
                 <div class="search-wrapper global-search">
                     <i class="fas fa-search"></i>
                     <input 
@@ -179,7 +180,6 @@
                         class="search-input"
                     />
                 </div>
-                <h2>{{ Locale.get('societyBillsHeading', 'Society Bills') }}</h2>
                 <div v-if="societyBills.length === 0" class="no-data-message">
                     <i class="fas fa-building"></i>
                     <h3>{{ Locale.get('noSocietyBills', 'No Society Bills') }}</h3>
