@@ -31,7 +31,7 @@ local function sendToDiscord(whType, title, message)
 end
 
 --------------------------------------------------------------------------------
--- Database / MySQL Utility
+-- Database Utils
 --------------------------------------------------------------------------------
 
 function GetPlayerBills(cid)
@@ -613,7 +613,7 @@ elseif Config.Framework == "ESX" then
 end
 
 --------------------------------------------------------------------------------
--- ESX Callback for checking items (if needed)
+-- ESX Callback for checking items
 --------------------------------------------------------------------------------
 if Config.Framework == "ESX" then
     ESX.RegisterServerCallback('peleg-billing:hasItem', function(source, cb, itemName)
