@@ -21,7 +21,7 @@ Config.Notify = "qb" -- Options: "esx", "qb", "okokNotify", "peleg-notify"
 
 Config.Tax = {
     Enabled = false, -- Enable or disable the tax system
-    Percentage = 0 -- Set the tax percentage (e.g., 10%)
+    Percentage = 0, -- Set the tax percentage (e.g., 10%)
 }
 
 -- _____  _____  ______  _______
