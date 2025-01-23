@@ -516,6 +516,61 @@ RegisterNetEvent('peleg-billing:refundBill', function(billId)
 end)
 
 
+--------------------------------------------------------------------------------
+--  Pay Bill
+--------------------------------------------------------------------------------
+RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
+    local src = source
+    local amount, jobName, senderJob, senderName, foundBill = nil, nil, nil, nil, nil
+
+    local bill = MySQL.Sync.fetchAll('SELECT * FROM bills WHERE id = ?', {billId})
+    if bill and bill[1] then
+        foundBill = bill[1]
+        amount = tonumber(bill[1].amount) 
+        jobName = bill[1].job
+    end
+
+    if not foundBill then
+        if Config.Framework == "QB" then
+            TriggerClientEvent('QBCore:Notify', src, 'Bill not found', 'error')
+        elseif Config.Framework == "ESX" then
+            TriggerClientEvent('esx:showNotification', src, 'Bill not found')
+        end
+        return
+    end
+
+    if Config.Framework == "QB" then
+        local xPlayer = QBCore.Functions.GetPlayer(src)
+        if xPlayer.Functions.RemoveMoney('cash', amount) or xPlayer.Functions.RemoveMoney('bank', amount) then
+            TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount)
+            MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
+            TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
+            sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Not enough cash to pay the bill', 'error')
+        end
+
+    elseif Config.Framework == "ESX" then
+        local xPlayer = ESX.GetPlayerFromId(src)
+        local xPlayerJob = xPlayer.job
+        if xPlayer.getMoney() >= amount then
+            xPlayer.removeMoney(amount)
+            TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
+                if account then
+                    account.addMoney(amount)
+                    MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
+                    TriggerClientEvent('esx:showNotification', src, 'Bill paid from your cash and credited to sender society')
+                    sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
+                else
+                    TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
+                end
+            end)
+        else
+            TriggerClientEvent('esx:showNotification', src, 'Not enough cash to pay the bill')
+        end
+    end
+end)
+
 RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     local src = source
     local hasEnough = false
