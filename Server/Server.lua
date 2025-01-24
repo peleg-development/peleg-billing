@@ -386,7 +386,7 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
 end)
 
 --------------------------------------------------------------------------------
---  Pay Bill
+--  RefundBill
 --------------------------------------------------------------------------------
 RegisterNetEvent('peleg-billing:refundBill', function(billId)
     local src = source
@@ -677,6 +677,7 @@ RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
     end
 end)
 
+
 --------------------------------------------------------------------------------
 -- Callbacks for retrieving player names
 --------------------------------------------------------------------------------
@@ -723,5 +724,4 @@ if Config.Framework == "ESX" then
         end
     end)
 end
-
 

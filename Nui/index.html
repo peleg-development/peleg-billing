@@ -211,12 +211,12 @@
                             </p>
                             <p class="time">{{ bill.time }}</p>
                         </div>
-                        <div class="bill-card-footer">
+                        <!-- <div class="bill-card-footer">
                             <button @click="refundBill(bill.id)" class="btn-refund">
                                 <i class="fas fa-undo-alt"></i>
                                 {{ Locale.get('refundBill', 'Refund Bill') }}
                             </button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -339,9 +339,6 @@
                             :disabled="isSearching"
                         />
                     </div>
-                    <p v-if="isSearching" class="cooldown-message">
-                        Please wait before searching again...
-                    </p>
                 </div>
             
                 <div v-if="filteredPlayers.length" class="players-grid">
