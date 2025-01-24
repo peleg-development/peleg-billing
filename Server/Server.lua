@@ -405,7 +405,7 @@ RegisterNetEvent('peleg-billing:refundBill', function(billId)
     local billInfo = billResult[1]
     local jobName = billInfo.job
     local amount = tonumber(billInfo.amount)
-    local payerIdentifier = billInfo.payer_identifier 
+    local payerIdentifier = billInfo.receiver_cid 
     local isPaid = billInfo.paid  
 
     if not amount or not payerIdentifier then
@@ -588,40 +588,6 @@ RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     end
 
     TriggerClientEvent('peleg-billing:client:checkBalanceResponse', src, hasEnough)
-end)
-
-
---------------------------------------------------------------------------------
--- Refund Bill
---------------------------------------------------------------------------------
-RegisterNetEvent('peleg-billing:refundBill', function(billId)
-    local src = source
-
-    if Config.Framework == "QB" then
-        local xPlayer = QBCore.Functions.GetPlayer(src)
-        local jobName = xPlayer.PlayerData.job.name
-        
-        if xPlayer.PlayerData.job.isboss then
-            MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-            TriggerClientEvent('QBCore:Notify', src, 'Bill refunded successfully', 'success')
-            sendToDiscord("RefundBill", "Bill Refunded", ("A bill has been refunded by %s"):format(xPlayer.PlayerData.name))
-        else
-            TriggerClientEvent('QBCore:Notify', src, 'You do not have permission to refund this bill', 'error')
-        end
-
-    elseif Config.Framework == "ESX" then
-        local xPlayer = ESX.GetPlayerFromId(src)
-        local jobName = xPlayer.job.name
-        local jobGrade = xPlayer.job.grade_name
-
-        if jobGrade == "boss" then
-            MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-            TriggerClientEvent('esx:showNotification', src, 'Bill refunded successfully')
-            sendToDiscord("RefundBill", "Bill Refunded", ("A bill has been refunded by %s"):format(xPlayer.getName()))
-        else
-            TriggerClientEvent('esx:showNotification', src, 'You do not have permission to refund this bill')
-        end
-    end
 end)
 
 --------------------------------------------------------------------------------
