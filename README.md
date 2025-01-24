@@ -1,4 +1,4 @@
-# Peleg-Billing | v1.0.0 | Bugs will be fixed tommrow ( refund )
+# Peleg-Billing | v1.0.0 
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
@@ -25,7 +25,8 @@ Elevate your server’s job experience with **Peleg-Billing**, an advanced billi
 
 In many servers, the billing systems are always boaring and ugly or just buggy and usless in this system the money will be taken and received to the boss menu directly...
 
-## Exports ( Not working for now )
+## Exports | Not working for now only at the next version which will take some time
+you can use the event paybill
 
 ### Server-side:
 ```lua
