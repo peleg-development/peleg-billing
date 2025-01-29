@@ -19,7 +19,7 @@ new Vue({
         showbillmenu: false,
         playerSearch: '',
         billReason: '',
-        billAmount: 243324,
+        billAmount: 0,
         isSearching: false,
         showSelectedPlayerMenu: false,
         showSocietyMenu: false, 
