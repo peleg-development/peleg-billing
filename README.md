@@ -7,7 +7,10 @@
 
 
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
+
+### Vid
 [![YouTube Video](https://img.youtube.com/vi/0206ZIxeiGw/0.jpg)](https://youtu.be/0206ZIxeiGw)
+
 ### Overview: 
 
 Elevate your server’s job experience with **Peleg-Billing**, an advanced billing system designed to enhance gameplay and streamline transactions. Our system features a unique, clean, and user-friendly interface, making it easy for workers to manage and issue bills with precision.
