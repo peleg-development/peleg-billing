@@ -31,8 +31,9 @@
     /* Status Colors (Paid / Pending) */
     --color-status-paid-bg: #1f5d44;    
     --color-status-paid-text: #48e0a8;  
-    --color-status-pending-bg: #752f2f; 
-    --color-status-pending-text: #ff9191; 
+    --color-status-pending-bg: rgba(251, 191, 36, 0.1);
+    --color-status-pending-text: #fbbf24;
+    --color-status-pending-border: rgba(251, 191, 36, 0.2);
   
     /* Modal Overlays & Background */
     --color-modal-overlay: rgba(0, 0, 0, 0.8);
@@ -236,18 +237,39 @@ body {
     border-radius: 20px;
     font-size: 0.875rem;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
 }
 
 .status-badge.paid {
-    background: var(--color-status-paid-bg);
-    color: var(--color-status-paid-text);
+    background: rgba(72, 224, 168, 0.15);
+    color: #48e0a8;
+    border: 1px solid rgba(72, 224, 168, 0.3);
+}
+
+.status-badge.paid::before {
+    background: #48e0a8;
+    box-shadow: 0 0 0 2px rgba(72, 224, 168, 0.2);
 }
 
 .status-badge.pending {
-    background: var(--color-status-pending-bg);
-    color: var(--color-status-pending-text);
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
+.status-badge.pending::before {
+    background: #fbbf24;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+}
 .bill-card-body {
     margin: 1rem 0;
 }
@@ -745,96 +767,160 @@ body {
 .btn-details:hover {
     background: var(--color-button-details-hover);
 }
-
 /* Modal Styles */
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--color-modal-overlay);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: grid;
+    place-items: center;
     z-index: 1000;
+    padding: 1rem;
 }
 
 .modal-container {
-    background: var(--color-modal-background);
-    border: 1px solid var(--color-border);
-    border-radius: 20px;
-    width: 90%;
-    max-width: 500px;
+    background: #1a1b1f;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
     overflow: hidden;
 }
 
 .modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--color-border);
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: #212226;
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .modal-close {
-    background: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: var(--color-text-secondary);
+    color: #9ca3af;
     cursor: pointer;
-    padding: 0.5rem;
-    font-size: 1.25rem;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: rotate(90deg);
 }
 
 .modal-body {
-    padding: 1.5rem;
+    padding: 1.5rem 1.75rem;
 }
 
 .bill-detail-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 1rem 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bill-detail-item:last-child {
+    border-bottom: none;
 }
 
 .detail-label {
-    color: var(--color-text-secondary);
+    color: #9ca3af;
+    font-size: 0.95rem;
 }
 
 .detail-value {
-    color: var(--color-text);
+    color: #fff;
     font-weight: 500;
+    font-size: 0.95rem;
 }
 
 .modal-footer {
-    padding: 1.5rem;
-    border-top: 1px solid var(--color-border);
+    padding: 1.5rem 1.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+    background: #212226;
 }
 
-/* Scrollbar */
+.btn-pay {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(34, 197, 94, 0.3);
+}
+
+.btn-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.detail-value.status-paid {
+    color: #22c55e;  
+}
+
+.detail-value:not(.status-paid) {
+    color: #60a5fa; 
+}
+
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--color-scrollbar-track);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--color-scrollbar-thumb);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-scrollbar-thumb-hover);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Animations */
@@ -1018,186 +1104,200 @@ body {
 
 .playerbills-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.playerbills-container {
-    background: rgba(31, 32, 35, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: grid;
+    place-items: center;
+    z-index: 1000;
+  }
+  
+  .playerbills-container {
     width: 90%;
-    max-width: 800px;
-    max-height: 80vh; 
+    max-width: 1200px;
+    max-height: 80vh;
+    background: #1a1b1f;
+    border-radius: 24px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-}
-
-.playerbills-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    overflow: hidden;
+  }
+  
+  .playerbills-header {
     padding: 24px 32px;
+    background: #212226;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.playerbills-header h2 {
-    font-size: 1.75rem;
+  }
+  
+  .playerbills-header h2 {
+    font-size: 24px;
     font-weight: 600;
-    background: var(--color-primary-gradient);
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-}
-
-.playerbills-close {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.playerbills-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(90deg);
-}
-
-.playerbills-body {
+    margin-bottom: 20px;
+  }
+  
+  .playerbills-search-wrapper {
+    position: relative;
+  }
+  
+  .playerbills-search-wrapper input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+  }
+  
+  .playerbills-search-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+  }
+  
+  .playerbills-body {
     flex: 1;
     overflow-y: auto;
-    padding: 32px;
-}
-
-
-.playerbills-cards {
+    padding: 24px;
+  }
+  
+  .playerbills-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-}
-
-.playerbills-card {
-    background: rgba(31, 32, 35, 0.6);
+    gap: 20px;
+  }
+  
+  .playerbills-card {
+    background: #212226;
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-.playerbills-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--color-primary-gradient);
-    opacity: 0.8;
-}
-
-.playerbills-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.playerbills-card-header {
+    transition: transform 0.2s;
+  }
+  
+  .playerbills-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .playerbills-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-.playerbills-amount {
-    font-size: 2rem;
+  }
+  
+  .playerbills-amount {
+    font-size: 28px;
     font-weight: 700;
-    background: var(--color-primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.playerbills-status {
-    padding: 8px 16px;
+    color: #fff;
+  }
+  
+  .playerbills-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.unpaid .playerbills-status {
-    background: var(--color-status-pending-bg);
-    color: var(--color-status-pending-text);
-}
-
-.playerbills-card-body p {
-    margin: 12px 0;
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
+    font-size: 14px;
+  }
+  
+  .playerbills-status.pending {
+    background: rgba(234, 179, 8, 0.1);
+    color: #eab308;
+  }
+  
+  .playerbills-status.paid {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+  
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  
+  .pending .status-indicator {
+    background: #eab308;
+  }
+  
+  .paid .status-indicator {
+    background: #22c55e;
+  }
+  
+  .playerbills-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .playerbills-detail-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.playerbills-card-body p i {
-    color: var(--color-primary);
-    width: 20px;
-}
-
-.playerbills-no-data {
+    gap: 12px;
+    color: #9ca3af;
+    font-size: 14px;
+  }
+  
+  .playerbills-detail-item i {
+    color: #3b82f6;
+    width: 16px;
+  }
+  
+  .playerbills-no-data {
+    height: 100%;
+    display: grid;
+    place-items: center;
     text-align: center;
+    color: #6b7280;
     padding: 60px 20px;
-}
-
-.playerbills-no-data i {
-    font-size: 4rem;
-    background: var(--color-primary-gradient);
+  }
+  
+  .playerbills-no-data i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 24px;
-}
-
-.playerbills-no-data h3 {
-    font-size: 1.75rem;
-    color: var(--color-text);
-    margin-bottom: 12px;
-}
-
-.playerbills-no-data p {
-    color: var(--color-text-secondary);
-    font-size: 1.1rem;
-}
-
-.playerbills-footer {
-    padding: 24px 32px;
+  }
+  
+  .playerbills-no-data h3 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  
+  .playerbills-footer {
+    padding: 20px 32px;
+    background: #212226;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     text-align: right;
-}
-
-.playerbills-btn-close {
-    background: var(--color-primary-gradient);
-    color: white;
-    padding: 12px 32px;
+  }
+  
+  .playerbills-btn-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
     border-radius: 12px;
-    font-weight: 600;
-    font-size: 1rem;
+    color: #fff;
+    font-weight: 500;
+    transition: all 0.2s;
     border: none;
     cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.playerbills-btn-close:hover {
+  }
+  
+  .playerbills-btn-close:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-}
+  }
 
 .fade-enter-active,
 .fade-leave-active {
