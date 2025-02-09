@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
 [![Issues](https://img.shields.io/github/issues/peleg-development/peleg-billing)](https://github.com/peleg-development/peleg-billing/issues)
 [![Contributors](https://img.shields.io/github/contributors/peleg-development/peleg-billing)](none)
+- **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
 
 
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
