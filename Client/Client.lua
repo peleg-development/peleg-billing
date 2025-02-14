@@ -1,3 +1,9 @@
+_print = print
+print = function(...)
+    if Config.Debug then
+        _print(...)
+    end    
+end
 --------------------------------------------------------------------------------
 -- Initialization for QB or ESX
 --------------------------------------------------------------------------------
@@ -199,17 +205,19 @@ RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb
                     end
                 end, serverId)
             elseif Config.Framework == "ESX" then
-                TriggerServerEvent('peleg-billing:getPlayerNameServer', serverId, function(response)
-                    print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
-                    table.insert(players, { id = serverId, name = response.name, cid = response.cid })
-                    processed = processed + 1
-
-                    if processed == totalNearby then
-                        local serializedPlayers = serializeTable(players)
-                        print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
-                        cb(players)
+                ESX.TriggerServerCallback('peleg-billing:getPlayerNameServer', function(response)
+                    if response then
+                        print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
+                        table.insert(players, { id = serverId, name = response.name, cid = response.cid })
+                        processed = processed + 1
+                
+                        if processed == totalNearby then
+                            local serializedPlayers = serializeTable(players)
+                            print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
+                            cb(players)
+                        end
                     end
-                end)
+                end, serverId)                
             end
         end
     end)

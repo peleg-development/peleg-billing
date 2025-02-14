@@ -3,7 +3,7 @@ const Locale = {
 
     setLocale(newLocale) {
         this.values = newLocale;
-        console.log('[Locale] Locale updated:', this.values);
+        // console.log('[Locale] Locale updated:', this.values);
     },
 
     get(key, defaultValue = '') {
@@ -392,10 +392,10 @@ new Vue({
                     return response.json();
                 })
                 .then(players => {
-                    console.log('Nearby Players:', players);                     
+                    // console.log('Nearby Players:', players);                     
                     if (Array.isArray(players) && players.length > 0) {
                         players.forEach((player, index) => {
-                            console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}, CID = ${player.cid}`);
+                            // console.log(`Player ${index + 1}: ID = ${player.id}, Name = ${player.name}, CID = ${player.cid}`);
                         });
                     } else {
                         this.notify({ title: 'Error', message: 'No nearby players found', type: 'error' });

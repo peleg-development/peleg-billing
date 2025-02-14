@@ -1,3 +1,9 @@
+_print = print
+print = function(...)
+    if Config.Debug then
+        _print(...)
+    end    
+end
 --------------------------------------------------------------------------------
 -- Framework Initialization
 --------------------------------------------------------------------------------
@@ -697,15 +703,12 @@ if Config.Framework == "QB" then
         end
     end)
 elseif Config.Framework == "ESX" then
-    RegisterNetEvent('peleg-billing:getPlayerNameServer', function(serverId, callback)
-        local src = source
+    ESX.RegisterServerCallback('peleg-billing:getPlayerNameServer', function(source, cb, serverId)
         local xPlayer = ESX.GetPlayerFromId(serverId)
         if xPlayer then
-            local name = xPlayer.getName()
-            local cid  = xPlayer.identifier
-            callback({ name = name, cid = cid })
+            cb({ name = xPlayer.getName(), cid = xPlayer.identifier })
         else
-            callback({ name = "Unknown", cid = "N/A" })
+            cb({ name = "Unknown", cid = "N/A" })
         end
     end)
 end
