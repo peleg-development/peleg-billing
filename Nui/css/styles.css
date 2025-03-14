@@ -1,5 +1,4 @@
 :root {
-    /* Primary Colors */
     --color-background: #1f2125; 
     --color-background-dark: #191b1e;
     --color-sidebar: #24272b;   
@@ -13,33 +12,29 @@
     --color-text-secondary: #b7c1ce;   
     --color-text-placeholder: #9caaba; 
   
-    /* Primary / Accent Blues */
     --color-primary: #3fa1f8;        
     --color-primary-gradient: linear-gradient(
       45deg,
       #3fa1f8,
       #70bff8
-    ); /* Gentle two-stop gradient */
+    );
+
     --color-secondary: #70bff8;         
   
-    /* Borders & Shadows */
     --color-border: #2d2f33;
     --color-border-hover: #3fa1f8;    
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-hover: rgba(0, 0, 0, 0.2);
   
-    /* Status Colors (Paid / Pending) */
     --color-status-paid-bg: #1f5d44;    
     --color-status-paid-text: #48e0a8;  
     --color-status-pending-bg: rgba(251, 191, 36, 0.1);
     --color-status-pending-text: #fbbf24;
     --color-status-pending-border: rgba(251, 191, 36, 0.2);
   
-    /* Modal Overlays & Background */
     --color-modal-overlay: rgba(0, 0, 0, 0.8);
     --color-modal-background: #24272b;
   
-    /* Button Colors */
     --color-button-hover: #3fa1f8;
     --color-button-background: linear-gradient(
       45deg,
@@ -53,12 +48,10 @@
       #70bff8
     );
   
-    /* Scrollbar */
     --color-scrollbar-track: #191b1e;
     --color-scrollbar-thumb: #303236;
     --color-scrollbar-thumb-hover: #3fa1f8;
   
-    /* Base responsive settings */
     --sidebar-width: 220px;
     --sidebar-collapsed-width: 80px;
   }
@@ -97,7 +90,6 @@ body {
     will-change: transform, opacity;
 }
 
-/* Basic Trans */
 .slide-fade-enter-active {
     animation: slideIn 0.3s ease-out;
 }
@@ -442,7 +434,6 @@ body {
     font-size: 0.875rem;
 }
 
-/* Bill Form Panel */
 .bill-form-panel {
     flex: 2;
     background: var(--color-sidebar);
@@ -702,7 +693,6 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* Button Styles */
 .btn-pay, .btn-close {
     background: var(--color-primary-gradient);
     color: white;
@@ -767,7 +757,7 @@ body {
 .btn-details:hover {
     background: var(--color-button-details-hover);
 }
-/* Modal Styles */
+
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -923,7 +913,7 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
-/* Animations */
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -935,7 +925,6 @@ body {
     }
 }
 
-/* Search Section */
 .search-container {
     position: relative;
     margin-bottom: 2rem;
@@ -964,7 +953,6 @@ body {
     color: var(--color-text-secondary);
 }
 
-/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.3s ease;
@@ -986,7 +974,6 @@ body {
     opacity: 0;
 }
 
-/* Search Section */
 .search-section {
     margin-bottom: 1.5rem;
 }
@@ -1018,14 +1005,12 @@ body {
     color: var(--color-text-secondary);
 }
 
-/* Player Grid */
 .players-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
 }
 
-/* Player Card */
 .player-card {
     display: flex;
     align-items: center;
@@ -1078,7 +1063,6 @@ body {
     font-size: 1.25rem;
 }
 
-/* No Results */
 .no-results {
     text-align: center;
     padding: 2rem 0;
@@ -1110,9 +1094,9 @@ body {
     display: grid;
     place-items: center;
     z-index: 1000;
-  }
-  
-  .playerbills-container {
+}
+
+.playerbills-container {
     width: 90%;
     max-width: 1200px;
     max-height: 80vh;
@@ -1122,28 +1106,28 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-  }
-  
-  .playerbills-header {
+}
+
+.playerbills-header {
     padding: 24px 32px;
     background: #212226;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .playerbills-header h2 {
+}
+
+.playerbills-header h2 {
     font-size: 24px;
     font-weight: 600;
     background: linear-gradient(135deg, #3b82f6, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 20px;
-  }
-  
-  .playerbills-search-wrapper {
+}
+
+.playerbills-search-wrapper {
     position: relative;
-  }
-  
-  .playerbills-search-wrapper input {
+}
+
+.playerbills-search-wrapper input {
     width: 100%;
     padding: 12px 16px 12px 40px;
     background: rgba(255, 255, 255, 0.05);
@@ -1151,136 +1135,136 @@ body {
     border-radius: 12px;
     color: #fff;
     font-size: 15px;
-  }
-  
-  .playerbills-search-wrapper i {
+}
+
+.playerbills-search-wrapper i {
     position: absolute;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
     color: #6b7280;
-  }
-  
-  .playerbills-body {
+}
+
+.playerbills-body {
     flex: 1;
     overflow-y: auto;
     padding: 24px;
-  }
-  
-  .playerbills-cards {
+}
+
+.playerbills-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-  }
-  
-  .playerbills-card {
+}
+
+.playerbills-card {
     background: #212226;
     border-radius: 16px;
     padding: 20px;
     position: relative;
     transition: transform 0.2s;
-  }
-  
-  .playerbills-card:hover {
+}
+
+.playerbills-card:hover {
     transform: translateY(-4px);
-  }
-  
-  .playerbills-card-header {
+}
+
+.playerbills-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-  }
-  
-  .playerbills-amount {
+}
+
+.playerbills-amount {
     font-size: 28px;
     font-weight: 700;
     color: #fff;
-  }
-  
-  .playerbills-status {
+}
+
+.playerbills-status {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 14px;
-  }
-  
-  .playerbills-status.pending {
+}
+
+.playerbills-status.pending {
     background: rgba(234, 179, 8, 0.1);
     color: #eab308;
-  }
-  
-  .playerbills-status.paid {
+}
+
+.playerbills-status.paid {
     background: rgba(34, 197, 94, 0.1);
     color: #22c55e;
-  }
-  
-  .status-indicator {
+}
+
+.status-indicator {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-  }
-  
-  .pending .status-indicator {
+}
+
+.pending .status-indicator {
     background: #eab308;
-  }
-  
-  .paid .status-indicator {
+}
+
+.paid .status-indicator {
     background: #22c55e;
-  }
-  
-  .playerbills-card-body {
+}
+
+.playerbills-card-body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-  
-  .playerbills-detail-item {
+}
+
+.playerbills-detail-item {
     display: flex;
     align-items: center;
     gap: 12px;
     color: #9ca3af;
     font-size: 14px;
-  }
-  
-  .playerbills-detail-item i {
+}
+
+.playerbills-detail-item i {
     color: #3b82f6;
     width: 16px;
-  }
-  
-  .playerbills-no-data {
+}
+
+.playerbills-no-data {
     height: 100%;
     display: grid;
     place-items: center;
     text-align: center;
     color: #6b7280;
     padding: 60px 20px;
-  }
-  
-  .playerbills-no-data i {
+}
+
+.playerbills-no-data i {
     font-size: 48px;
     margin-bottom: 16px;
     background: linear-gradient(135deg, #3b82f6, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-  }
-  
-  .playerbills-no-data h3 {
+}
+
+.playerbills-no-data h3 {
     font-size: 24px;
     color: #fff;
     margin-bottom: 8px;
-  }
-  
-  .playerbills-footer {
+}
+
+.playerbills-footer {
     padding: 20px 32px;
     background: #212226;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     text-align: right;
-  }
-  
-  .playerbills-btn-close {
+}
+
+.playerbills-btn-close {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -1292,12 +1276,12 @@ body {
     transition: all 0.2s;
     border: none;
     cursor: pointer;
-  }
-  
-  .playerbills-btn-close:hover {
+}
+
+.playerbills-btn-close:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-  }
+}
 
 .fade-enter-active,
 .fade-leave-active {

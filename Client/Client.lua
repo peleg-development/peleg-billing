@@ -4,9 +4,7 @@ print = function(...)
         _print(...)
     end    
 end
---------------------------------------------------------------------------------
--- Initialization for QB or ESX
---------------------------------------------------------------------------------
+
 local QBCore = nil
 local ESX    = nil
 
@@ -49,9 +47,6 @@ function RefactorLocaleForNUI()
     return flatLocale
 end
 
---------------------------------------------------------------------------------
--- NUI Handling & Callbacks
---------------------------------------------------------------------------------
 local function OpenUi(data)
     if not data then
         print("Error: No data provided to OpenUi")
@@ -147,9 +142,6 @@ RegisterNetEvent('peleg-billing:client:receiveBills', function(bills)
     })
 end)
 
---------------------------------------------------------------------------------
--- Nearby Players
---------------------------------------------------------------------------------
 local function serializeTable(tbl)
     local status, result = pcall(function()
         return json.encode(tbl)
@@ -228,9 +220,6 @@ RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb
     end
 end)
 
---------------------------------------------------------------------------------
--- Command or Item Usage to Open the Billing Menu
---------------------------------------------------------------------------------
 if Config.Framework == "QB" then
     RegisterCommand(Config.BillCommand, function()
         local playerPed = PlayerPedId()

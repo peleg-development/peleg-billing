@@ -4,9 +4,7 @@ print = function(...)
         _print(...)
     end    
 end
---------------------------------------------------------------------------------
--- Framework Initialization
---------------------------------------------------------------------------------
+
 local QBCore = nil
 local ESX    = nil
 
@@ -16,9 +14,6 @@ elseif Config.Framework == "ESX" then
     ESX = exports["es_extended"]:getSharedObject()
 end
 
---------------------------------------------------------------------------------
--- DISCORD WEBHOOKS
---------------------------------------------------------------------------------
 local function sendToDiscord(whType, title, message)
     local webhookURL = Config.Webhooks[whType]
     if not webhookURL or webhookURL == "" then return end
@@ -35,10 +30,6 @@ local function sendToDiscord(whType, title, message)
         { ['Content-Type'] = 'application/json' }
     )
 end
-
---------------------------------------------------------------------------------
--- Database Utils
---------------------------------------------------------------------------------
 
 function GetPlayerBills(cid)
     local unpaidBills = {}
@@ -273,9 +264,6 @@ RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     TriggerClientEvent('peleg-billing:client:receiveOnlinePlayers', src, players)
 end)
 
---------------------------------------------------------------------------------
--- Billing Logic
---------------------------------------------------------------------------------
 RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
     local src       = source
     local cid       = GetCid(src)  
@@ -332,7 +320,6 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
             end
         end
         if not foundOnline then
-            -- Offline fallback
             local nameResult = MySQL.query.await("SELECT firstname, lastname FROM users WHERE identifier = ?", { cid })
             if nameResult and nameResult[1] then
                 senderName = string.format("%s %s", nameResult[1].firstname, nameResult[1].lastname)
@@ -391,9 +378,6 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
     TriggerClientEvent("peleg-billing:client:notify", src, "Bill sent successfully")
 end)
 
---------------------------------------------------------------------------------
---  RefundBill
---------------------------------------------------------------------------------
 RegisterNetEvent('peleg-billing:refundBill', function(billId)
     local src = source
     local framework = Config.Framework  
@@ -522,9 +506,6 @@ RegisterNetEvent('peleg-billing:refundBill', function(billId)
 end)
 
 
---------------------------------------------------------------------------------
---  Pay Bill
---------------------------------------------------------------------------------
 RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
     local src = source
     local amount, jobName, senderJob, senderName, foundBill = nil, nil, nil, nil, nil
@@ -596,9 +577,6 @@ RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     TriggerClientEvent('peleg-billing:client:checkBalanceResponse', src, hasEnough)
 end)
 
---------------------------------------------------------------------------------
--- requestBillingMenu
---------------------------------------------------------------------------------
 RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
     local src = source
 
@@ -683,10 +661,6 @@ RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
     end
 end)
 
-
---------------------------------------------------------------------------------
--- Callbacks for retrieving player names
---------------------------------------------------------------------------------
 if Config.Framework == "QB" then
     QBCore.Functions.CreateCallback('peleg-billing:getPlayerName', function(source, cb, serverId)
         print(string.format("[peleg-billing] Server callback 'getPlayerName' triggered for serverId %d.", serverId))
@@ -713,9 +687,6 @@ elseif Config.Framework == "ESX" then
     end)
 end
 
---------------------------------------------------------------------------------
--- ESX Callback for checking items
---------------------------------------------------------------------------------
 if Config.Framework == "ESX" then
     ESX.RegisterServerCallback('peleg-billing:hasItem', function(source, cb, itemName)
         local xPlayer = ESX.GetPlayerFromId(source)
