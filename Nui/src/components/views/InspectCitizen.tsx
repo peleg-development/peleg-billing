@@ -243,11 +243,10 @@ const InspectCitizen: React.FC = () => {
     setHasError(false);
   };
   
-  const handlePlayerClick = (cid: string, player: any) => {
+  const handlePlayerClick = (cid: string) => {
     if (!cid) return;
     
     try {
-      console.log('Player clicked:', player.name, 'CID:', cid);
       
       setTimeout(() => {
         fetchPlayerBills(cid);
@@ -309,7 +308,7 @@ const InspectCitizen: React.FC = () => {
           {filteredPlayers.map((player) => (
             <PlayerCard
               key={player.cid || player.id || Math.random().toString()}
-              onClick={() => handlePlayerClick(player.cid || player.id || '', player)}
+              onClick={() => handlePlayerClick(player.cid || player.id || '')}
               hoverable
             >
               <PlayerAvatar>

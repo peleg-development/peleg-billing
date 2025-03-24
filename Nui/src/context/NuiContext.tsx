@@ -66,7 +66,6 @@ const isEnvBrowser = () => !(window as any).invokeNative;
 
 const fetchNui = async (eventName: string, data: any = {}) => {
   if (isEnvBrowser()) {
-    console.log(`[NUI] Simulating fetch to ${eventName} with payload:`, data);
     return { ok: true };
   }
 
@@ -244,7 +243,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           localeValues: nuiData.locale || {}
         }));
       } else if (data.type === 'updatePlayerBills') {
-        console.log('Received bills data:', data.bills);
         setState(prev => ({
           ...prev,
           selectedPlayerBills: Array.isArray(data.bills) ? data.bills : [],
@@ -457,7 +455,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         
         setTimeout(() => {
           if (state.selectedPlayerBills.length === 0) {
-            console.log('No bills received from server, using mock bills');
             setState(prev => ({
               ...prev,
               selectedPlayerBills: [
