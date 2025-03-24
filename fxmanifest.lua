@@ -1,8 +1,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'KurdYion / (discord: kurdyion6)'
-description 'A custom billing system for FiveM QBCore'
+author 'Peleg / (discord: peleg_3)'
+description 'billing system for QBCore/ESX'
 version '1.0.0'
 
 client_scripts {
@@ -20,10 +20,12 @@ shared_scripts {
     "Locales/Locales.lua",
 }
 
-ui_page 'Nui/index.html'
+ui_page 'Nui/build/index.html'
 
 files {
-    'Nui/index.html',
-    'Nui/css/styles.css',
-    'Nui/js/app.js'
+    'Nui/build/index.html',
+    'Nui/build/assets/*.js',
+    'Nui/build/assets/*.css',
+    'Nui/build/assets/*.woff',
+    'Nui/build/assets/*.woff2'
 }

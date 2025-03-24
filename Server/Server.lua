@@ -1,10 +1,3 @@
-_print = print
-print = function(...)
-    if Config.Debug then
-        _print(...)
-    end    
-end
-
 local QBCore = nil
 local ESX    = nil
 
@@ -12,6 +5,35 @@ if Config.Framework == "QB" then
     QBCore = exports["qb-core"]:GetCoreObject()
 elseif Config.Framework == "ESX" then
     ESX = exports["es_extended"]:getSharedObject()
+end
+
+if Config.Framework == "QB" then
+    QBCore.Functions.CreateCallback('peleg-billing:getPlayerName', function(source, cb, serverId)
+        local targetPlayer = QBCore.Functions.GetPlayer(tonumber(serverId))
+        if targetPlayer then
+            local charInfo = targetPlayer.PlayerData.charinfo
+            local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
+            local cid = targetPlayer.PlayerData.citizenid  
+            cb({ name = fullName, cid = cid })
+        else
+            cb({ name = "Unknown", cid = "N/A" })
+        end
+    end)
+elseif Config.Framework == "ESX" then
+    ESX.RegisterServerCallback('peleg-billing:getPlayerNameServer', function(source, cb, serverId)
+        local xPlayer = ESX.GetPlayerFromId(serverId)
+        if xPlayer then
+            local result = MySQL.query.await('SELECT firstname, lastname FROM users WHERE identifier = ?', { xPlayer.identifier })
+            if result and result[1] then
+                local fullName = ("%s %s"):format(result[1].firstname, result[1].lastname)
+                cb({ name = fullName, cid = xPlayer.identifier })
+            else
+                cb({ name = "Unknown", cid = "N/A" })
+            end
+        else
+            cb({ name = "Unknown", cid = "N/A" })
+        end
+    end)
 end
 
 local function sendToDiscord(whType, title, message)
@@ -123,7 +145,6 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
 
     if bills then
         for i, bill in ipairs(bills) do
-            print(bill.id, bill.reason, bill.amount, bill.sender_name, bill.job, bill.date, bill.time, bill.paid)
             bills[i] = {
                 id = bill.id,
                 amount = bill.amount,
@@ -288,7 +309,6 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
     end
 
     if not jobName then
-        print("^1[peleg-billing] Cannot find job for the sender. Billing aborted.^0")
         return
     end
 
@@ -371,8 +391,6 @@ RegisterNetEvent("peleg-billing:server:billPlayer", function(data)
         )
 
         sendToDiscord("SendBill", "Bill Sent", discordMessage)
-    else
-        print("^1[peleg-billing] Failed to insert bill into database.^0")
     end
 
     TriggerClientEvent("peleg-billing:client:notify", src, "Bill sent successfully")
@@ -528,32 +546,52 @@ RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
 
     if Config.Framework == "QB" then
         local xPlayer = QBCore.Functions.GetPlayer(src)
-        if xPlayer.Functions.RemoveMoney('cash', amount) or xPlayer.Functions.RemoveMoney('bank', amount) then
+        local bankBalance = xPlayer.Functions.GetMoney('bank')
+        local cashBalance = xPlayer.Functions.GetMoney('cash')
+        
+        if (bankBalance + cashBalance) >= amount then
+            if bankBalance >= amount then
+                xPlayer.Functions.RemoveMoney('bank', amount)
+            else
+                local remainingAmount = amount - bankBalance
+                xPlayer.Functions.RemoveMoney('bank', bankBalance)
+                xPlayer.Functions.RemoveMoney('cash', remainingAmount)
+            end
+            
             TriggerEvent('qb-bossmenu:server:addAccountMoney', jobName, amount)
             MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-            TriggerClientEvent('QBCore:Notify', src, 'Bill paid from your cash and credited to sender society', 'success')
+            TriggerClientEvent('QBCore:Notify', src, 'Bill paid successfully', 'success')
             sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.PlayerData.name, senderJob))
         else
-            TriggerClientEvent('QBCore:Notify', src, 'Not enough cash to pay the bill', 'error')
+            TriggerClientEvent('QBCore:Notify', src, 'Not enough money to pay the bill', 'error')
         end
 
     elseif Config.Framework == "ESX" then
         local xPlayer = ESX.GetPlayerFromId(src)
-        local xPlayerJob = xPlayer.job
-        if xPlayer.getMoney() >= amount then
-            xPlayer.removeMoney(amount)
+        local bankBalance = xPlayer.getAccount('bank').money
+        local cashBalance = xPlayer.getMoney()
+        
+        if (bankBalance + cashBalance) >= amount then
+            if bankBalance >= amount then
+                xPlayer.removeAccountMoney('bank', amount)
+            else
+                local remainingAmount = amount - bankBalance
+                xPlayer.removeAccountMoney('bank', bankBalance)
+                xPlayer.removeMoney(remainingAmount)
+            end
+            
             TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. jobName, function(account)
                 if account then
                     account.addMoney(amount)
                     MySQL.Async.execute('UPDATE bills SET paid = ? WHERE id = ?', {true, billId})
-                    TriggerClientEvent('esx:showNotification', src, 'Bill paid from your cash and credited to sender society')
+                    TriggerClientEvent('esx:showNotification', src, 'Bill paid successfully')
                     sendToDiscord("SendBill", "Bill Paid", ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, xPlayer.getName(), senderJob))
                 else
                     TriggerClientEvent('esx:showNotification', src, 'Failed to credit the bill amount to sender society')
                 end
             end)
         else
-            TriggerClientEvent('esx:showNotification', src, 'Not enough cash to pay the bill')
+            TriggerClientEvent('esx:showNotification', src, 'Not enough money to pay the bill')
         end
     end
 end)
@@ -565,12 +603,16 @@ RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
     if Config.Framework == "QB" then
         local xPlayer = QBCore.Functions.GetPlayer(src)
         if xPlayer then
-            hasEnough = xPlayer.Functions.GetMoney('cash') >= amount
+            local bankBalance = xPlayer.Functions.GetMoney('bank')
+            local cashBalance = xPlayer.Functions.GetMoney('cash')
+            hasEnough = (bankBalance + cashBalance) >= amount
         end
     elseif Config.Framework == "ESX" then
         local xPlayer = ESX.GetPlayerFromId(src)
         if xPlayer then
-            hasEnough = xPlayer.getMoney() >= amount
+            local bankBalance = xPlayer.getAccount('bank').money
+            local cashBalance = xPlayer.getMoney()
+            hasEnough = (bankBalance + cashBalance) >= amount
         end
     end
 
@@ -591,7 +633,6 @@ RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
         local societyBills = {}
         local jobName  = Player.PlayerData.job.name or "none"
         local jobGrade = tostring(Player.PlayerData.job.grade.level) or "0"
-
         if Config.Jobs[jobName] and Config.Jobs[jobName][jobGrade] then
             local jobConfig = Config.Jobs[jobName][jobGrade]
             if jobConfig.BossAccess then
@@ -660,32 +701,6 @@ RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
         end
     end
 end)
-
-if Config.Framework == "QB" then
-    QBCore.Functions.CreateCallback('peleg-billing:getPlayerName', function(source, cb, serverId)
-        print(string.format("[peleg-billing] Server callback 'getPlayerName' triggered for serverId %d.", serverId))
-        local targetPlayer = QBCore.Functions.GetPlayer(tonumber(serverId))
-        if targetPlayer then
-            local charInfo = targetPlayer.PlayerData.charinfo
-            local fullName = ("%s %s"):format(charInfo.firstname, charInfo.lastname)
-            local cid = targetPlayer.PlayerData.citizenid  
-            print(string.format("[peleg-billing] Retrieved name for serverId %d: %s | CID: %s", serverId, fullName, cid))
-            cb({ name = fullName, cid = cid })
-        else
-            print(string.format("[peleg-billing] No player found with serverId %d. Returning 'Unknown' and 'N/A'.", serverId))
-            cb({ name = "Unknown", cid = "N/A" })
-        end
-    end)
-elseif Config.Framework == "ESX" then
-    ESX.RegisterServerCallback('peleg-billing:getPlayerNameServer', function(source, cb, serverId)
-        local xPlayer = ESX.GetPlayerFromId(serverId)
-        if xPlayer then
-            cb({ name = xPlayer.getName(), cid = xPlayer.identifier })
-        else
-            cb({ name = "Unknown", cid = "N/A" })
-        end
-    end)
-end
 
 if Config.Framework == "ESX" then
     ESX.RegisterServerCallback('peleg-billing:hasItem', function(source, cb, itemName)

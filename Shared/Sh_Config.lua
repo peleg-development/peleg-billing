@@ -1,14 +1,11 @@
 Config = {}
-
-Config.Debug = false -- prints or not
-
 -- _______  ______ _______ _______ _______ _  _  _  _____   ______ _     _
 -- |______ |_____/ |_____| |  |  | |______ |  |  | |     | |_____/ |____/ 
 -- |       |    \_ |     | |  |  | |______ |__|__| |_____| |    \_ |    \_
 
 Config.Framework = "QB" -- Options: "QB" or "ESX"
 Config.BillingItem = "" -- Define the item here; leave empty for no item
-Config.BillCommand = "bill" -- Define the command to open the billing menu
+Config.BillCommand = "bills" -- Define the command to open the billing menu
 
 -- __   _  _____  _______ _____ _______ __   __
 -- | \  | |     |    |      |   |______   \_/  

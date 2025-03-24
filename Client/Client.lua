@@ -1,12 +1,7 @@
-_print = print
-print = function(...)
-    if Config.Debug then
-        _print(...)
-    end    
-end
-
 local QBCore = nil
 local ESX    = nil
+
+local cachedNearbyPlayers = {}
 
 if Config.Framework == "QB" then
     QBCore = exports["qb-core"]:GetCoreObject()
@@ -25,8 +20,6 @@ function NotifyPlayer(message,title,  type)
         TriggerEvent('okokNotify:Alert', title, message, 5000, type)
     elseif Config.Notify == "peleg-notify" then
         exports["peleg-notify"]:notify(message, title, type)
-    else
-        print(("[Notification] %s"):format(message)) 
     end
 end
 
@@ -49,7 +42,6 @@ end
 
 local function OpenUi(data)
     if not data then
-        print("Error: No data provided to OpenUi")
         return
     end
     
@@ -58,7 +50,6 @@ local function OpenUi(data)
         type = "openMe",
         data = data
     }
-    print("Sending NUI data:", json.encode(message))
     SendNUIMessage(message)
     SetNuiFocus(true, true)
 end
@@ -153,75 +144,112 @@ local function serializeTable(tbl)
     end
 end
 
+local lastNearbyPlayersCheck = 0
+local nearbyPlayersCooldown = 1500 
+
 RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb)
+    local currentTime = GetGameTimer()
+    if currentTime - lastNearbyPlayersCheck < nearbyPlayersCooldown then
+        cb(cachedNearbyPlayers or {})
+        return
+    end
+    
+    lastNearbyPlayersCheck = currentTime
     local status, err = pcall(function()
-        print("[peleg-billing] NUI callback 'getNearbyPlayers' triggered.")
         local players = {}
         local playerPed = PlayerPedId()
         local playerCoords = GetEntityCoords(playerPed)
         local nearbyPlayers = {}
+        local maxDistance = 5.0
+        local maxPlayersToProcess = 10 
 
-        for _, player in ipairs(GetActivePlayers()) do
-            if player ~= PlayerId() then
+        local activePlayers = GetActivePlayers()
+        local nearbyCount = 0
+        
+        for _, player in ipairs(activePlayers) do
+            if player ~= PlayerId() and nearbyCount < maxPlayersToProcess then
                 local targetPed = GetPlayerPed(player)
-                local targetCoords = GetEntityCoords(targetPed)
-                if #(playerCoords - targetCoords) < 10.0 then 
-                    local serverId = GetPlayerServerId(player)
-                    table.insert(nearbyPlayers, serverId)
+                if DoesEntityExist(targetPed) then
+                    local targetCoords = GetEntityCoords(targetPed)
+                    local distance = #(playerCoords - targetCoords)
+                    if distance < maxDistance then 
+                        local serverId = GetPlayerServerId(player)
+                        table.insert(nearbyPlayers, {
+                            serverId = serverId,
+                            distance = distance 
+                        })
+                        nearbyCount = nearbyCount + 1
+                    end
                 end
             end
         end
 
+        table.sort(nearbyPlayers, function(a, b)
+            return a.distance < b.distance
+        end)
+        
         local totalNearby = #nearbyPlayers
         local processed = 0
 
-        print(string.format("[peleg-billing] Found %d nearby players.", totalNearby))
-
         if totalNearby == 0 then
-            print("[peleg-billing] No nearby players found. Returning empty list.")
-            cb(players)
+            cachedNearbyPlayers = {}
+            cb({})
             return
         end
-
-        for _, serverId in ipairs(nearbyPlayers) do
-            if Config.Framework == "QB" then
+        
+        if Config.Framework == "QB" then
+            for _, playerData in ipairs(nearbyPlayers) do
                 QBCore.Functions.TriggerCallback('peleg-billing:getPlayerName', function(response)
-                    print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
-                    table.insert(players, { id = serverId, name = response.name, cid = response.cid })
+                    if response and response.name and response.cid then
+                        table.insert(players, { 
+                            id = playerData.serverId, 
+                            name = response.name, 
+                            cid = response.cid 
+                        })
+                    end
+                    
                     processed = processed + 1
-
                     if processed == totalNearby then
-                        local serializedPlayers = serializeTable(players)
-                        print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
+                        cachedNearbyPlayers = players
                         cb(players)
                     end
-                end, serverId)
-            elseif Config.Framework == "ESX" then
+                end, playerData.serverId)
+            end
+        elseif Config.Framework == "ESX" then
+            for _, playerData in ipairs(nearbyPlayers) do
                 ESX.TriggerServerCallback('peleg-billing:getPlayerNameServer', function(response)
-                    if response then
-                        print(string.format("[peleg-billing] Retrieved data for serverId %d: Name - %s | CID - %s", serverId, response.name, response.cid))
-                        table.insert(players, { id = serverId, name = response.name, cid = response.cid })
-                        processed = processed + 1
-                
-                        if processed == totalNearby then
-                            local serializedPlayers = serializeTable(players)
-                            print(string.format("[peleg-billing] All nearby players processed. Data to send: %s", serializedPlayers))
-                            cb(players)
-                        end
+                    if response and response.name and response.cid then
+                        table.insert(players, { 
+                            id = playerData.serverId, 
+                            name = response.name, 
+                            cid = response.cid 
+                        })
                     end
-                end, serverId)                
+                    
+                    processed = processed + 1
+                    if processed == totalNearby then
+                        cachedNearbyPlayers = players
+                        cb(players)
+                    end
+                end, playerData.serverId)                
             end
         end
+
+        SetTimeout(5000, function()
+            if processed < totalNearby then
+                cachedNearbyPlayers = players
+                cb(players)
+            end
+        end)
     end)
 
     if not status then
-        print(string.format("[peleg-billing] Error in 'getNearbyPlayers' callback: %s", tostring(err)))
-        cb({ error = "An error occurred while fetching nearby players." })
+        cb(cachedNearbyPlayers or {})
     end
 end)
 
 if Config.Framework == "QB" then
-    RegisterCommand(Config.BillCommand, function()
+    RegisterCommand("bills", function()
         local playerPed = PlayerPedId()
 
         if not Config.BillingItem or Config.BillingItem == "" then
