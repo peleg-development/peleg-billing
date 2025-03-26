@@ -10,7 +10,7 @@
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
 
 ### Vid
-[[![YouTube Video](https://img.youtube.com/vi/0206ZIxeiGw/0.jpg)](https://youtu.be/0206ZIxeiGw)](https://www.youtube.com/watch?v=2QYfqNN4q-A)
+https://www.youtube.com/watch?v=2QYfqNN4q-A
 
 ### Overview: 
 
