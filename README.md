@@ -9,7 +9,7 @@
 
 https://discord.gg/6xjSVb2HXj for updates join my discord server 
 
-### Vid
+### Preview
 https://www.youtube.com/watch?v=2QYfqNN4q-A
 
 ### Overview: 
