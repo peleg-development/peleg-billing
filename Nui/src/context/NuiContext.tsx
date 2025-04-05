@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
 export interface Bill {
   id: string;
@@ -11,6 +11,13 @@ export interface Bill {
   date: string;
   time: string;
   paid: boolean;
+  canceled?: boolean;
+  refunded?: boolean;
+  status?: 'paid' | 'pending' | 'canceled' | 'refunded';
+  canceled_by?: string;
+  receiver_cid?: string;
+  receiver?: string;
+  sender_cid?: string;
 }
 
 export interface Player {
@@ -25,6 +32,7 @@ export interface LocaleValues {
 
 interface NuiState {
   showMenu: boolean;
+  showQuickBill: boolean;
   cid: string;
   myBills: Bill[];
   societyBills: Bill[];
@@ -42,14 +50,19 @@ interface NuiState {
   developmentMode: boolean;
   showSelectedPlayerMenu: boolean;
   isClosing: boolean;
+  jobAccess: boolean;
+  inspectCitizen: boolean;
+  billingStats: any;
 }
 
 interface NuiContextValue extends NuiState {
   fetchNearbyPlayers: () => void;
   fetchOnlinePlayers: (query: string) => void;
   closeUI: () => void;
+  closeQuickBill: () => void;
   payBill: (billId: string) => void;
   billPlayer: (cid: string, reason: string, amount: number) => void;
+  quickBillPlayer: (cid: string, reason: string, amount: number) => void;
   selectBill: (bill: Bill) => void;
   selectPlayer: (player: Player) => void;
   clearSelectedPlayer: () => void;
@@ -88,6 +101,7 @@ const fetchNui = async (eventName: string, data: any = {}) => {
 export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<NuiState>({
     showMenu: false,
+    showQuickBill: false,
     cid: '',
     myBills: [],
     societyBills: [],
@@ -105,6 +119,9 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     developmentMode: false,
     showSelectedPlayerMenu: false,
     isClosing: false,
+    jobAccess: false,
+    inspectCitizen: false,
+    billingStats: {},
   });
 
   useEffect(() => {
@@ -242,12 +259,79 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           canBill: nuiData.canBill || false,
           localeValues: nuiData.locale || {}
         }));
+      } else if (data.type === 'openQuickBill') {
+        const nuiData = data.data;
+        setState(prev => ({
+          ...prev,
+          showQuickBill: true,
+          localeValues: nuiData?.locale || {},
+        }));
       } else if (data.type === 'updatePlayerBills') {
         setState(prev => ({
           ...prev,
           selectedPlayerBills: Array.isArray(data.bills) ? data.bills : [],
-          showSelectedPlayerMenu: true  
+          showSelectedPlayerMenu: true,
+          showMenu: true
         }));
+      } else if (data.type === 'updateBillingStats') {
+        setState(prev => ({
+          ...prev,
+          billingStats: data.stats || {}
+        }));
+      } else if (data.type === 'billStatusUpdated') {
+        const updatedBill = data.bill;
+        if (!updatedBill || !updatedBill.id) return;
+        
+        setState(prev => {
+          const newState = { ...prev };
+          
+          newState.myBills = prev.myBills.map(bill => 
+            bill.id === updatedBill.id ? updatedBill : bill
+          );
+          
+          if ((updatedBill.status === 'canceled' || updatedBill.status === 'refunded') && 
+              prev.myBills.some(bill => bill.id === updatedBill.id)) {
+            newState.myBills = prev.myBills.filter(bill => bill.id !== updatedBill.id);
+            
+            if (!prev.billingHistory.some(bill => bill.id === updatedBill.id)) {
+              newState.billingHistory = [updatedBill, ...prev.billingHistory];
+            }
+          }
+          
+          newState.societyBills = prev.societyBills.map(bill => 
+            bill.id === updatedBill.id ? updatedBill : bill
+          );
+          
+          newState.billingHistory = prev.billingHistory.map(bill => 
+            bill.id === updatedBill.id ? updatedBill : bill
+          );
+          
+          newState.selectedPlayerBills = prev.selectedPlayerBills.map(bill => 
+            bill.id === updatedBill.id ? updatedBill : bill
+          );
+          
+          if (prev.selectedBill && prev.selectedBill.id === updatedBill.id) {
+            newState.selectedBill = updatedBill;
+          }
+          
+          if (updatedBill.status !== 'pending' && 
+              (prev.myBills.some(bill => bill.id === updatedBill.id) || 
+               prev.societyBills.some(bill => bill.id === updatedBill.id))) {
+            if (isEnvBrowser()) {
+              setTimeout(() => {
+                fetchNui('peleg-billing:callback:getBillingStats', {
+                  societyMode: prev.showSocietyMenu
+                });
+              }, 500);
+            } else {
+              fetchNui('peleg-billing:callback:getBillingStats', {
+                societyMode: prev.showSocietyMenu
+              });
+            }
+          }
+          
+          return newState;
+        });
       }
     };
 
@@ -255,15 +339,19 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (e.key === 'Escape') {
         if (state.selectedBill) {
           setState(prev => ({ ...prev, selectedBill: null }));
+          e.preventDefault();
         } else if (state.selectedPlayer && state.showSelectedPlayerMenu) {
           setState(prev => ({
             ...prev,
             showSelectedPlayerMenu: false,
             selectedPlayer: null,
-            selectedPlayerBills: []
+            selectedPlayerBills: [],
+            showMenu: true
           }));
+          e.preventDefault();
         } else if (state.showMenu) {
           closeUI();
+          e.preventDefault();
         }
       }
     };
@@ -277,51 +365,46 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [state.showMenu, state.selectedBill, state.selectedPlayer, state.showSelectedPlayerMenu]);
 
-  const fetchNearbyPlayers = async () => {
-    setState(prev => ({ ...prev, isLoading: true }));
-
-    if (state.developmentMode) {
-      setTimeout(() => {
+  const fetchNearbyPlayers = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      console.log('[QuickBill] Fetching nearby players...');
+      
+      const response = await fetchNui('peleg-billing:callback:getNearbyPlayers');
+      console.log('[QuickBill] Response received:', response);
+      
+      if (Array.isArray(response)) {
+        console.log('[QuickBill] Response is array');
         setState(prev => ({ 
           ...prev, 
-          nearbyPlayers: [
-            { id: 'player1', name: 'John Doe', cid: 'CID123456' },
-            { id: 'player2', name: 'Jane Smith', cid: 'CID789012' },
-            { id: 'player3', name: 'Robert Johnson', cid: 'CID345678' }
-          ],
-          isLoading: false
+          nearbyPlayers: response.map((p: any) => ({
+            id: p.id,
+            name: p.name || 'Unknown',
+            cid: p.cid || p.id
+          }))
         }));
-      }, 600);
-      return;
-    }
-
-    try {
-      if (isEnvBrowser()) {
-        setTimeout(() => {
-          setState(prev => ({ 
-            ...prev, 
-            nearbyPlayers: [
-              { id: 'player1', name: 'John Doe', cid: 'CID123456' },
-              { id: 'player2', name: 'Jane Smith', cid: 'CID789012' },
-              { id: 'player3', name: 'Robert Johnson', cid: 'CID345678' }
-            ],
-            isLoading: false
-          }));
-        }, 1000);
-        return;
+      } else if (response && Array.isArray(response.players)) {
+        console.log('[QuickBill] Response has players array');
+        setState(prev => ({ 
+          ...prev, 
+          nearbyPlayers: response.players.map((p: any) => ({
+            id: p.id,
+            name: p.name || 'Unknown',
+            cid: p.cid || p.id
+          }))
+        }));
+      } else {
+        console.log('[QuickBill] No valid nearby players found');
+        setState(prev => ({ ...prev, nearbyPlayers: [] }));
       }
-
-      const response = await fetchNui('peleg-billing:callback:getNearbyPlayers', {});
-      setState(prev => ({ 
-        ...prev, 
-        nearbyPlayers: Array.isArray(response) ? response : [],
-        isLoading: false
-      }));
     } catch (error) {
       console.error('Error fetching nearby players:', error);
+      setState(prev => ({ ...prev, nearbyPlayers: [] }));
+    } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  };
+  }, []);
 
   const fetchOnlinePlayers = async (query: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
@@ -346,6 +429,16 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setState(prev => ({ ...prev, showMenu: false, isClosing: false }));
     }, 300); 
     
+  };
+
+  const closeQuickBill = () => {
+    setState(prev => ({ ...prev, showQuickBill: false }));
+    
+    try {
+      fetchNui('peleg-billing:callback:closeQuickBill');
+    } catch (error) {
+      console.error('Error closing QuickBill UI:', error);
+    }
   };
 
   const payBill = async (billId: string) => {
@@ -424,6 +517,46 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const quickBillPlayer = useCallback(async (cid: string, reason: string, amount: number) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      await fetchNui('peleg-billing:callback:quickBillPlayer', {
+        cid,
+        reason,
+        amount,
+      });
+      
+      setState(prev => ({ ...prev, isLoading: false }));
+      
+      setTimeout(() => {
+        setState(prev => ({ ...prev, showQuickBill: false }));
+        try {
+          fetchNui('peleg-billing:callback:closeQuickBill');
+        } catch (err) {
+          console.error('Error closing UI:', err);
+        }
+      }, 300);
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to quick bill player:', error);
+      
+      setState(prev => ({ ...prev, isLoading: false }));
+      
+      setTimeout(() => {
+        setState(prev => ({ ...prev, showQuickBill: false }));
+        try {
+          fetchNui('peleg-billing:callback:closeQuickBill');
+        } catch (err) {
+          console.error('Error closing UI:', err);
+        }
+      }, 300);
+      
+      return false;
+    }
+  }, []);
+
   const selectBill = (bill: Bill) => {
     setState(prev => ({ ...prev, selectedBill: bill }));
   };
@@ -447,7 +580,8 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setState(prev => ({ 
         ...prev, 
         selectedPlayer: player,
-        showSelectedPlayerMenu: true
+        showSelectedPlayerMenu: true,
+        showMenu: true
       }));
       
       try {
@@ -467,7 +601,8 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                   time: new Date().toTimeString().split(' ')[0].substring(0, 5),
                   paid: false
                 }
-              ]
+              ],
+              showMenu: true
             }));
           }
         }, 2000);
@@ -486,7 +621,8 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               time: new Date().toTimeString().split(' ')[0].substring(0, 5),
               paid: false
             }
-          ]
+          ],
+          showMenu: true
         }));
       }
     } catch (error) {
@@ -506,7 +642,8 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             time: new Date().toTimeString().split(' ')[0].substring(0, 5),
             paid: false
           }
-        ]
+        ],
+        showMenu: true
       }));
     }
   };
@@ -623,22 +760,24 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
-  const closePlayerBills = () => {
+  const closePlayerBills = useCallback(() => {
     setState(prev => ({
       ...prev,
       showSelectedPlayerMenu: false,
       selectedPlayer: null,
       selectedPlayerBills: []
     }));
-  };
+  }, []);
 
   const contextValue: NuiContextValue = {
     ...state,
     fetchNearbyPlayers,
     fetchOnlinePlayers,
     closeUI,
+    closeQuickBill,
     payBill,
     billPlayer,
+    quickBillPlayer,
     selectBill,
     selectPlayer,
     clearSelectedPlayer,

@@ -10,5 +10,7 @@ CREATE TABLE IF NOT EXISTS `bills` (
     `date` VARCHAR(10) NOT NULL,
     `time` VARCHAR(8) NOT NULL,
     `paid` BOOLEAN DEFAULT FALSE,
+    `status` VARCHAR(20) DEFAULT 'pending',
+    `canceled_by` VARCHAR(255) DEFAULT NULL,
     PRIMARY KEY (`id`)
 );

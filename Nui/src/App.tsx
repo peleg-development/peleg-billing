@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NuiProvider, useNui } from './context/NuiContext';
 import Dashboard from './components/layout/Dashboard';
 import PlayerBills from './components/views/PlayerBills';
+import QuickBill from './components/views/QuickBill';
 import styled, { keyframes } from 'styled-components';
 
 const App: React.FC = () => {
@@ -13,33 +14,36 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { showMenu, isClosing } = useNui();
+  const { showMenu, showQuickBill, isClosing } = useNui();
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showMenu) {
+      if (e.key === 'Escape' && (showMenu || showQuickBill)) {  
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showMenu]);
+  }, [showMenu, showQuickBill]);
 
-  if (!showMenu && !isClosing) return null;
+  if (!showMenu && !showQuickBill && !isClosing) return null;
 
   return (
     <>
-      <Container $visible={showMenu} $isClosing={isClosing}>
-        <BackgroundBlur />
-        <ContentWrapper $isClosing={isClosing}>
-          <GlowEffect />
-          <Dashboard />
-          <CornerAccent position="top-left" />
-          <CornerAccent position="bottom-right" />
-        </ContentWrapper>
-      </Container>
+      {showMenu && (
+        <Container $visible={showMenu} $isClosing={isClosing}>
+          <BackgroundBlur />
+          <ContentWrapper $isClosing={isClosing}>
+            <GlowEffect />
+            <Dashboard />
+            <CornerAccent position="top-left" />
+            <CornerAccent position="bottom-right" />
+          </ContentWrapper>
+        </Container>
+      )}
       
       <PlayerBills />
+      <QuickBill />
     </>
   );
 };

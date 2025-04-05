@@ -6,6 +6,7 @@ import BillHistory from '../views/BillHistory';
 import SocietyBills from '../views/SocietyBills';
 import BillPlayer from '../views/BillPlayer';
 import InspectCitizen from '../views/InspectCitizen';
+import BillingStats from '../views/BillingStats';
 import { useNui } from '../../context/NuiContext';
 import { FaSignOutAlt, FaExclamationCircle } from 'react-icons/fa';
 
@@ -20,10 +21,13 @@ const DashboardContainer = styled.div`
 
 const Content = styled.div`
   flex: 1;
-  overflow-y: auto;
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, rgba(26, 32, 44, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%);
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   
   /* Better scrollbar */
   &::-webkit-scrollbar {
@@ -101,6 +105,11 @@ const ActionButton = styled.button`
 
 const ContentWrapper = styled.div`
   position: relative;
+  flex: 1;
+  height: calc(100% - 4rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const SystemNotification = styled.div`
@@ -140,7 +149,12 @@ const Dashboard: React.FC = () => {
     }, 5000);
   }, []);
 
+  React.useEffect(() => {
+    console.log("Dashboard current view:", view);
+  }, [view]);
+
   const handleViewChange = (newView: string) => {
+    console.log("Changing view to:", newView);
     setView(newView);
 
     if (newView === 'billPlayer') {
@@ -154,6 +168,7 @@ const Dashboard: React.FC = () => {
     switch (view) {
       case 'myBills': return 'My Bills';
       case 'billingHistory': return 'Bill History';
+      case 'billingStats': return 'Billing Statistics';
       case 'societyBills': return 'Society Bills';
       case 'billPlayer': return 'Bill Player';
       case 'inspectCitizen': return 'Inspect Citizen';
@@ -182,11 +197,14 @@ const Dashboard: React.FC = () => {
             </SystemNotification>
           )}
           
-          {view === 'myBills' && <MyBills hideHeader={true} />}
-          {view === 'billingHistory' && <BillHistory hideHeader={true} />}
-          {view === 'societyBills' && <SocietyBills hideHeader={true} />}
-          {view === 'billPlayer' && <BillPlayer hideHeader={true} />}
-          {view === 'inspectCitizen' && <InspectCitizen />}
+          <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+            {view === 'myBills' && <MyBills hideHeader={true} />}
+            {view === 'billingHistory' && <BillHistory hideHeader={true} />}
+            {view === 'billingStats' && <BillingStats hideHeader={true} />}
+            {view === 'societyBills' && <SocietyBills hideHeader={true} />}
+            {view === 'billPlayer' && <BillPlayer hideHeader={true} />}
+            {view === 'inspectCitizen' && <InspectCitizen />}
+          </div>
         </ContentWrapper>
       </Content>
     </DashboardContainer>

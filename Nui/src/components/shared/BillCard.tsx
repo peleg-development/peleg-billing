@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaInfoCircle, FaCheckCircle, FaUser, FaBriefcase, FaCalendarAlt } from 'react-icons/fa';
+import { FaInfoCircle, FaCheckCircle, FaUser, FaBriefcase, FaCalendarAlt, FaTimesCircle, FaUndoAlt } from 'react-icons/fa';
 import { Bill } from '../../context/NuiContext';
 import { useNui } from '../../context/NuiContext';
 
@@ -10,7 +10,7 @@ interface BillCardProps {
   type?: 'default' | 'history' | 'society';
 }
 
-const StyledCard = styled.div<{ $type: string; $paid: boolean }>`
+const StyledCard = styled.div<{ $type: string; $status: string }>`
   background-color: var(--card-bg);
   border-radius: 0.5rem;
   box-shadow: var(--shadow-sm);
@@ -20,8 +20,20 @@ const StyledCard = styled.div<{ $type: string; $paid: boolean }>`
   border: 1px solid var(--border-color);
   cursor: pointer;
   
-  ${({ $paid }) => $paid && `
+  ${({ $status }) => $status === 'paid' && `
     border-left: 3px solid var(--success-color);
+  `}
+  
+  ${({ $status }) => $status === 'pending' && `
+    border-left: 3px solid var(--warning-color);
+  `}
+  
+  ${({ $status }) => $status === 'canceled' && `
+    border-left: 3px solid var(--danger-color);
+  `}
+  
+  ${({ $status }) => $status === 'refunded' && `
+    border-left: 3px solid var(--info-color);
   `}
   
   ${({ $type }) => $type === 'history' && `
@@ -33,7 +45,7 @@ const StyledCard = styled.div<{ $type: string; $paid: boolean }>`
   `}
   
   &:hover {
-    transform: scale(1.02);
+    transform: translateY(-3px);
     box-shadow: var(--shadow);
   }
 `;
@@ -53,7 +65,7 @@ const Amount = styled.div`
   color: var(--text-primary);
 `;
 
-const Status = styled.div<{ $paid: boolean }>`
+const Status = styled.div<{ $status: string }>`
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.75rem;
@@ -62,16 +74,35 @@ const Status = styled.div<{ $paid: boolean }>`
   align-items: center;
   gap: 0.25rem;
   
-  ${({ $paid }) => $paid 
-    ? `
-      background-color: rgba(5, 150, 105, 0.15);
-      color: var(--success-color);
-    `
-    : `
-      background-color: rgba(217, 119, 6, 0.15);
-      color: var(--warning-color);
-    `
-  }
+  ${({ $status }) => {
+    switch($status) {
+      case 'paid':
+        return `
+          background-color: rgba(5, 150, 105, 0.15);
+          color: var(--success-color);
+        `;
+      case 'pending':
+        return `
+          background-color: rgba(217, 119, 6, 0.15);
+          color: var(--warning-color);
+        `;
+      case 'canceled':
+        return `
+          background-color: rgba(220, 38, 38, 0.15);
+          color: var(--danger-color);
+        `;
+      case 'refunded':
+        return `
+          background-color: rgba(59, 130, 246, 0.15);
+          color: var(--info-color);
+        `;
+      default:
+        return `
+          background-color: rgba(217, 119, 6, 0.15);
+          color: var(--warning-color);
+        `;
+    }
+  }}
   
   &::before {
     content: '';
@@ -79,7 +110,15 @@ const Status = styled.div<{ $paid: boolean }>`
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background-color: ${({ $paid }) => $paid ? 'var(--success-color)' : 'var(--warning-color)'};
+    background-color: ${({ $status }) => {
+      switch($status) {
+        case 'paid': return 'var(--success-color)';
+        case 'pending': return 'var(--warning-color)';
+        case 'canceled': return 'var(--danger-color)';
+        case 'refunded': return 'var(--info-color)';
+        default: return 'var(--warning-color)';
+      }
+    }};
   }
 `;
 
@@ -127,13 +166,21 @@ const CardFooter = styled.div`
   background-color: rgba(0, 0, 0, 0.1);
 `;
 
-const ViewButton = styled.button<{ $paid: boolean }>`
+const ViewButton = styled.button<{ $status: string }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   background: none;
   border: none;
-  color: ${({ $paid }) => $paid ? 'var(--success-color)' : 'var(--accent-color)'};
+  color: ${({ $status }) => {
+    switch($status) {
+      case 'paid': return 'var(--success-color)';
+      case 'pending': return 'var(--accent-color)';
+      case 'canceled': return 'var(--danger-color)';
+      case 'refunded': return 'var(--info-color)';
+      default: return 'var(--accent-color)';
+    }
+  }};
   font-weight: 500;
   font-size: 0.85rem;
   cursor: pointer;
@@ -153,10 +200,20 @@ const ViewButton = styled.button<{ $paid: boolean }>`
 const BillCard: React.FC<BillCardProps> = ({ bill, onClick, type = 'default' }) => {
   const { getLocale } = useNui();
   
+  const getBillStatus = (bill: Bill): string => {
+    if (bill.status) return bill.status;
+    if (bill.refunded) return 'refunded';
+    if (bill.canceled) return 'canceled';
+    if (bill.paid) return 'paid';
+    return 'pending';
+  };
+  
+  const status = getBillStatus(bill);
+  
   return (
     <StyledCard 
       $type={type} 
-      $paid={bill.paid}
+      $status={status}
       onClick={onClick}
     >
       <CardHeader>
@@ -170,11 +227,11 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onClick, type = 'default' }) 
           }
         </Amount>
         {type === 'default' && (
-          <Status $paid={bill.paid}>
-            {bill.paid 
-              ? getLocale('paidStatus', 'Paid') 
-              : getLocale('pendingStatus', 'Pending')
-            }
+          <Status $status={status}>
+            {status === 'paid' && getLocale('paidStatus', 'Paid')}
+            {status === 'pending' && getLocale('pendingStatus', 'Pending')}
+            {status === 'canceled' && getLocale('canceledStatus', 'Canceled')}
+            {status === 'refunded' && getLocale('refundedStatus', 'Refunded')}
           </Status>
         )}
         {type !== 'default' && (
@@ -201,10 +258,18 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onClick, type = 'default' }) 
       </CardBody>
       
       <CardFooter>
-        <ViewButton $paid={bill.paid}>
-          {bill.paid ? <FaCheckCircle /> : <FaInfoCircle />}
-          {bill.paid 
+        <ViewButton $status={status}>
+          {status === 'paid' && <FaCheckCircle />}
+          {status === 'pending' && <FaInfoCircle />}
+          {status === 'canceled' && <FaTimesCircle />}
+          {status === 'refunded' && <FaUndoAlt />}
+          
+          {status === 'paid' 
             ? getLocale('viewReceipt', 'View Receipt') 
+            : status === 'canceled'
+            ? getLocale('viewCanceledBill', 'View Canceled Bill')
+            : status === 'refunded'
+            ? getLocale('viewRefundedBill', 'View Refunded Bill')
             : getLocale('viewDetails', 'View Details')
           }
         </ViewButton>

@@ -180,8 +180,12 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ billId, onClose }) 
           
           <DetailItem>
             <DetailLabel>{getLocale('statusLabel', 'Status:')}</DetailLabel>
-            <DetailValue $isPaid={bill.paid}>
-              {bill.paid 
+            <DetailValue $isPaid={bill.status === 'paid' || bill.paid}>
+              {bill.status === 'canceled' 
+                ? getLocale('canceledStatus', 'Canceled') 
+                : bill.status === 'refunded'
+                ? getLocale('refundedStatus', 'Refunded')
+                : bill.status === 'paid' || bill.paid
                 ? getLocale('paidStatus', 'Paid') 
                 : getLocale('pendingStatus', 'Pending')
               }
@@ -190,7 +194,7 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ billId, onClose }) 
         </ModalBody>
         
         <ModalFooter>
-          {!bill.paid && (
+          {!bill.paid && bill.status !== 'canceled' && bill.status !== 'refunded' && (
             <Button 
               variant="success" 
               icon={<FaCheck />} 

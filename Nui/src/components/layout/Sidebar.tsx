@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaFileInvoiceDollar, FaFileInvoice, FaHistory, FaBuilding, FaUserPlus, FaSearch, FaServer } from 'react-icons/fa';
+import { FaFileInvoiceDollar, FaFileInvoice, FaHistory, FaBuilding, FaUserPlus, FaSearch, FaServer, FaChartBar } from 'react-icons/fa';
 import { useNui } from '../../context/NuiContext';
 
 interface SidebarProps {
@@ -121,6 +121,8 @@ const ServerInfo = styled.div`
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   const { showSocietyMenu, showInspectCitizen, canBill, getLocale } = useNui();
+  
+  console.log("Sidebar current view:", currentView); // Debug
 
   return (
     <SidebarContainer>
@@ -144,6 +146,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
         >
           <FaHistory />
           <span>{getLocale('historyLabel', 'History')}</span>
+        </NavItem>
+        
+        <NavItem 
+          active={currentView === 'billingStats'} 
+          onClick={() => setView('billingStats')}
+        >
+          <FaChartBar />
+          <span>{getLocale('statsLabel', 'Stats')}</span>
         </NavItem>
         
         {showSocietyMenu && (

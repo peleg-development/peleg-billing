@@ -1,31 +1,40 @@
 fx_version 'cerulean'
+
+shared_script "@SecureServe/src/module/module.lua"
+shared_script "@SecureServe/src/module/module.js"
+file "@SecureServe/secureserve.key"
+
 game 'gta5'
 
-author 'Peleg / (discord: peleg_3)'
-description 'billing system for QBCore/ESX'
-version '1.0.0'
+author 'PelegMC'
+name "peleg-billing"
+description "A simple billing script for FiveM"
+version "1.0.0"
+
+lua54 'yes'
+use_fxv2_oal 'yes'
+
+shared_scripts {
+    'bridge/bridge.lua',
+    'shared/config.lua',
+    'locales/locales.lua',
+}
 
 client_scripts {
-    'Client/Client.lua'
+    'client/Client.lua'
 }
 
 server_scripts {
-    'Server/Server.lua',
-    'Shared/Sv_Config.lua',
-    '@oxmysql/lib/MySQL.lua'
+    '@oxmysql/lib/MySQL.lua',
+    'Server/Server.lua'
 }
 
-shared_scripts {
-    'Shared/Sh_Config.lua',
-    "Locales/Locales.lua",
-}
-
-ui_page 'Nui/build/index.html'
+ui_page 'nui/build/index.html'
 
 files {
-    'Nui/build/index.html',
-    'Nui/build/assets/*.js',
-    'Nui/build/assets/*.css',
-    'Nui/build/assets/*.woff',
-    'Nui/build/assets/*.woff2'
+    'nui/build/index.html',
+    'nui/build/assets/*.js',
+    'nui/build/assets/*.css',
+    'nui/build/assets/*.woff',
+    'nui/build/assets/*.woff2'
 }

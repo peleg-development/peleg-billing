@@ -1,79 +1,130 @@
-local QBCore = nil
-local ESX    = nil
-
+---@type table Cached nearby players list.
 local cachedNearbyPlayers = {}
+---@type boolean Whether the quick bill UI is active.
+local quickBillActive = false
+---@type any Timer reference for quick bill.
+local quickBillTimer = nil
+---@type number Last time nearby players were checked.
+local lastNearbyPlayersCheck = 0
+---@type number Cooldown between nearby player checks in milliseconds.
+local nearbyPlayersCooldown = 1500
 
-if Config.Framework == "QB" then
-    QBCore = exports["qb-core"]:GetCoreObject()
-elseif Config.Framework == "ESX" then
-    ESX = exports["es_extended"]:getSharedObject()
-end
-
-function NotifyPlayer(message,title,  type)
-    type = type or "info" 
-
-    if Config.Notify == "qb" then
-        TriggerEvent('QBCore:Notify', message, type)
-    elseif Config.Notify == "esx" then
-        ESX.ShowNotification(message)
-    elseif Config.Notify == "okokNotify" then
-        TriggerEvent('okokNotify:Alert', title, message, 5000, type)
-    elseif Config.Notify == "peleg-notify" then
-        exports["peleg-notify"]:notify(message, title, type)
-    end
-end
-
+--- Retrieves the current locale from the Bridge.
+---@return table Current locale table.
 function GetCurrentLocale()
-    return Config.Locales[Config.Locale] or Config.Locales["en"]
+    return Bridge.GetCurrentLocale()
 end
 
-function RefactorLocaleForNUI()
+--- Flattens the locale table for use in the NUI.
+---@return table A flat locale table.
+function FlattenLocaleForNUI()
     local flatLocale = {}
     local currentLocale = GetCurrentLocale()
-
     for _, section in pairs(currentLocale) do
         for key, value in pairs(section) do
             flatLocale[key] = value
         end
     end
-
     return flatLocale
 end
 
-local function OpenUi(data)
-    if not data then
-        return
-    end
-    
-    data.locale = RefactorLocaleForNUI()
-    local message = {
+--- Sends a notification to the player.
+---@param message string The notification message.
+---@param title string The title for the notification.
+---@param type string The type of notification (e.g. "primary", "error").
+function NotifyPlayer(message, title, type)
+    Bridge.Notify(message, title, type)
+end
+
+--- Sends a message to the NUI.
+---@param type string The message type.
+---@param data table|nil The data payload.
+function SendUIMessage(type, data)
+    SendNUIMessage({
+        type = type,
+        data = data or {}
+    })
+end
+
+--- Opens the billing menu UI.
+---@param data table The data to send to the billing menu.
+function OpenBillingMenu(data)
+    if not data then return end
+    data.locale = FlattenLocaleForNUI()
+    SendNUIMessage({
         type = "openMe",
         data = data
-    }
-    SendNUIMessage(message)
+    })
     SetNuiFocus(true, true)
 end
 
-RegisterNetEvent('peleg-billing:openBillingMenu', function(data)
-    OpenUi(data)
-end)
+--- Opens the quick bill UI and sets a timeout to close it.
+function OpenQuickBillUI()
+    CloseQuickBillUI()
+    quickBillActive = true
+    quickBillTimer = SetTimeout(30000, function()
+        if quickBillActive then CloseQuickBillUI() end
+    end)
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        type = "openQuickBill",
+        data = { locale = FlattenLocaleForNUI() }
+    })
+end
+
+function CloseQuickBillUI()
+    if quickBillTimer then
+        ClearTimeout(quickBillTimer)
+        quickBillTimer = nil
+    end
+    if quickBillActive then
+        quickBillActive = false
+        SendNUIMessage({ type = "forceCloseQuickBill" })
+        SetNuiFocus(false, false)
+    end
+end
+
+--- Checks if the player has the required billing item.
+---@param callback function A callback function that receives a boolean.
+function CheckBillingItem(callback)
+    Bridge.CheckBillingItem(callback)
+end
+
+--- Returns whether the player has billing permission.
+---@return boolean
+function HasBillingPermission()
+    return Bridge.HasBillingPermission()
+end
+
+-- Events
+
+RegisterNetEvent('peleg-billing:openBillingMenu', OpenBillingMenu)
 
 RegisterNetEvent('peleg-billing:client:receiveOnlinePlayers', function(players)
-    SendNUIMessage({
-        type = 'updatePlayers',
-        players = players
-    })
+    SendNUIMessage({ type = 'updatePlayers', players = players })
 end)
 
-RegisterNetEvent('peleg-billing:client:notify', function(message, type)
-    NotifyPlayer(message, type)
+RegisterNetEvent('peleg-billing:client:notify', function(message, title, type)
+    NotifyPlayer(tostring(message or ""), tostring(title or ""), tostring(type or "primary"))
 end)
 
-RegisterNUICallback('peleg-billing:callback:refundBill', function(data, cb)
-    local billId = data.billId
-    TriggerServerEvent('peleg-billing:refundBill', billId)
-    cb('ok')
+RegisterNetEvent('peleg-billing:client:receiveBills', function(bills)
+    SendNUIMessage({ type = 'updatePlayerBills', bills = bills })
 end)
+
+RegisterNetEvent('peleg-billing:client:billStatusUpdated', function(updatedBill)
+    if not updatedBill or not updatedBill.id then return end
+    SendNUIMessage({ type = 'billStatusUpdated', bill = updatedBill })
+end)
+
+RegisterNetEvent('peleg-billing:client:receiveBillingStats', function(stats)
+    SendNUIMessage({ type = 'updateBillingStats', stats = stats })
+end)
+
+RegisterNetEvent('peleg-billing:client:checkBalanceResponse', function(hasEnough)
+end)
+
+-- NUI Callbacks
 
 RegisterNUICallback('close', function()
     SetNuiFocus(false, false)
@@ -84,13 +135,31 @@ RegisterNUICallback('peleg-billing:callback:close', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('peleg-billing:callback:refundBill', function(data, cb)
+    TriggerServerEvent('peleg-billing:server:refundBill', data.billId)
+    local locale = GetCurrentLocale()
+    local msg = locale.notifications.refundInitiated or ("Initiating refund for bill #" .. data.billId)
+    local title = locale.notifications.refundTitle or "Refund Request"
+    NotifyPlayer(msg, title, "success")
+    cb('ok')
+end)
+
+RegisterNUICallback('peleg-billing:callback:cancelBill', function(data, cb)
+    TriggerServerEvent('peleg-billing:server:cancelBill', data.billId)
+    local locale = GetCurrentLocale()
+    local msg = locale.notifications.cancelInitiated or ("Cancellation request sent for bill #" .. data.billId)
+    local title = locale.notifications.cancelTitle or "Bill Cancellation"
+    NotifyPlayer(msg, title, "success")
+    cb('ok')
+end)
+
 RegisterNUICallback('peleg-billing:callback:billPlayer', function(data, cb)
     TriggerServerEvent('peleg-billing:server:billPlayer', data)
     cb("ok")
 end)
 
 RegisterNUICallback('peleg-billing:callback:notify', function(data, cb)
-    NotifyPlayer(data.message, data.type)
+    NotifyPlayer(data.message, data.title, data.type)
     cb("ok")
 end)
 
@@ -100,52 +169,24 @@ RegisterNUICallback('peleg-billing:callback:payBill', function(data, cb)
 end)
 
 RegisterNUICallback('peleg-billing:callback:checkBalance', function(data, cb)
-    local amount = tonumber(data.amount)
-
-    TriggerServerEvent('peleg-billing:server:checkBalance', amount)
-
+    TriggerServerEvent('peleg-billing:server:checkBalance', tonumber(data.amount))
     RegisterNetEvent('peleg-billing:client:checkBalanceResponse', function(hasEnough)
         cb({ hasEnough = hasEnough })
     end)
 end)
 
 RegisterNUICallback('peleg-billing:callback:getOnlinePlayers', function(data, cb)
-    local searchQuery = data.query or ""
-    TriggerServerEvent('peleg-billing:server:getOnlinePlayers', searchQuery)
-
+    TriggerServerEvent('peleg-billing:server:getOnlinePlayers', data.query or "")
     RegisterNetEvent('peleg-billing:client:receiveOnlinePlayers', function(players)
-        cb(players) 
+        cb(players)
     end)
 end)
 
-
 RegisterNUICallback('peleg-billing:callback:fetchPlayerBills', function(data, cb)
-    local cid = data.cid
-    TriggerServerEvent('peleg-billing:server:fetchPlayerBills', cid, function(bills)
+    TriggerServerEvent('peleg-billing:server:fetchPlayerBills', data.cid, function(bills)
         cb({ bills = bills })
     end)
 end)
-
-RegisterNetEvent('peleg-billing:client:receiveBills', function(bills)
-    SendNUIMessage({
-        type = 'updatePlayerBills',
-        bills = bills
-    })
-end)
-
-local function serializeTable(tbl)
-    local status, result = pcall(function()
-        return json.encode(tbl)
-    end)
-    if status then
-        return result
-    else
-        return "{}"
-    end
-end
-
-local lastNearbyPlayersCheck = 0
-local nearbyPlayersCooldown = 1500 
 
 RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb)
     local currentTime = GetGameTimer()
@@ -153,138 +194,77 @@ RegisterNUICallback('peleg-billing:callback:getNearbyPlayers', function(data, cb
         cb(cachedNearbyPlayers or {})
         return
     end
-    
     lastNearbyPlayersCheck = currentTime
-    local status, err = pcall(function()
-        local players = {}
-        local playerPed = PlayerPedId()
-        local playerCoords = GetEntityCoords(playerPed)
-        local nearbyPlayers = {}
-        local maxDistance = 5.0
-        local maxPlayersToProcess = 10 
-
-        local activePlayers = GetActivePlayers()
-        local nearbyCount = 0
-        
-        for _, player in ipairs(activePlayers) do
-            if player ~= PlayerId() and nearbyCount < maxPlayersToProcess then
-                local targetPed = GetPlayerPed(player)
-                if DoesEntityExist(targetPed) then
-                    local targetCoords = GetEntityCoords(targetPed)
-                    local distance = #(playerCoords - targetCoords)
-                    if distance < maxDistance then 
-                        local serverId = GetPlayerServerId(player)
-                        table.insert(nearbyPlayers, {
-                            serverId = serverId,
-                            distance = distance 
-                        })
-                        nearbyCount = nearbyCount + 1
-                    end
-                end
-            end
-        end
-
-        table.sort(nearbyPlayers, function(a, b)
-            return a.distance < b.distance
-        end)
-        
-        local totalNearby = #nearbyPlayers
-        local processed = 0
-
-        if totalNearby == 0 then
-            cachedNearbyPlayers = {}
-            cb({})
-            return
-        end
-        
-        if Config.Framework == "QB" then
-            for _, playerData in ipairs(nearbyPlayers) do
-                QBCore.Functions.TriggerCallback('peleg-billing:getPlayerName', function(response)
-                    if response and response.name and response.cid then
-                        table.insert(players, { 
-                            id = playerData.serverId, 
-                            name = response.name, 
-                            cid = response.cid 
-                        })
-                    end
-                    
-                    processed = processed + 1
-                    if processed == totalNearby then
-                        cachedNearbyPlayers = players
-                        cb(players)
-                    end
-                end, playerData.serverId)
-            end
-        elseif Config.Framework == "ESX" then
-            for _, playerData in ipairs(nearbyPlayers) do
-                ESX.TriggerServerCallback('peleg-billing:getPlayerNameServer', function(response)
-                    if response and response.name and response.cid then
-                        table.insert(players, { 
-                            id = playerData.serverId, 
-                            name = response.name, 
-                            cid = response.cid 
-                        })
-                    end
-                    
-                    processed = processed + 1
-                    if processed == totalNearby then
-                        cachedNearbyPlayers = players
-                        cb(players)
-                    end
-                end, playerData.serverId)                
-            end
-        end
-
-        SetTimeout(5000, function()
-            if processed < totalNearby then
-                cachedNearbyPlayers = players
-                cb(players)
-            end
-        end)
+    Bridge.GetNearbyPlayers(5.0, 10, function(players)
+        cachedNearbyPlayers = players
+        cb(players)
     end)
-
-    if not status then
-        cb(cachedNearbyPlayers or {})
-    end
 end)
 
-if Config.Framework == "QB" then
-    RegisterCommand("bills", function()
-        local playerPed = PlayerPedId()
+RegisterNUICallback('peleg-billing:callback:quickBillPlayer', function(data, cb)
+    CloseQuickBillUI()
+    local playerCid = data.cid
+    local reason = data.reason or ""
+    local amount = tonumber(data.amount) or 0
+    if playerCid and reason ~= "" and amount > 0 then
+        TriggerServerEvent("peleg-billing:server:billPlayer", {
+            cid = playerCid,
+            reason = reason,
+            amount = amount
+        })
+        NotifyPlayer(Config.Locale["bill_sent"] or "Bill sent", "Success", "success")
+    else
+        NotifyPlayer(Config.Locale["invalid_bill_data"] or "Invalid bill data", "Error", "error")
+    end
+    cb({ success = true })
+end)
 
-        if not Config.BillingItem or Config.BillingItem == "" then
-            local playerData = QBCore.Functions.GetPlayerData()
-            TriggerServerEvent('peleg-billing:requestBillingMenu', playerData.citizenid)
-            return
+RegisterNUICallback('peleg-billing:callback:closeQuickBill', function(data, cb)
+    CloseQuickBillUI()
+    cb({ success = true })
+end)
+
+RegisterNUICallback('peleg-billing:callback:getBillingStats', function(data, cb)
+    local requestData = {}
+    if data and data.societyMode then
+        local playerData = Bridge.GetPlayerData()
+        if playerData and playerData.job then
+            requestData.job = playerData.job.name
         end
-    
-        QBCore.Functions.TriggerCallback("QBCore:HasItem", function(hasItem)
-            if hasItem then
-                local playerData = QBCore.Functions.GetPlayerData()
-                TriggerServerEvent('peleg-billing:requestBillingMenu', playerData.citizenid)
-            else
-                QBCore.Functions.Notify("You need a billing tablet to open the menu!", "error")
-            end
-        end, Config.BillingItem) 
-    end, false)
-
-elseif Config.Framework == "ESX" then
-    RegisterCommand(Config.BillCommand, function()
-        local playerPed = PlayerPedId()
-
-        if not Config.BillingItem or Config.BillingItem == "" then
-            TriggerServerEvent('peleg-billing:requestBillingMenu')
-            return
-        end
-
-        ESX.TriggerServerCallback("peleg-billing:hasItem", function(hasItem)
-            if hasItem then
-                TriggerServerEvent('peleg-billing:requestBillingMenu')
-            else
-                ESX.ShowNotification("You need a billing tablet to open the menu!", false, false, 140)
-            end
-        end, Config.BillingItem)
+    end
+    TriggerServerEvent('peleg-billing:server:getBillingStats', requestData)
+    RegisterNetEvent('peleg-billing:client:receiveBillingStats', function(stats)
+        cb(stats)
     end)
-end
+end)
 
+-- Commands
 
+RegisterCommand('closequickbill', function()
+    CloseQuickBillUI()
+end, false)
+
+RegisterCommand(Config.BillCommand, function()
+    CheckBillingItem(function(hasItem)
+        if hasItem then
+            local citizenId = Bridge.GetPlayerCitizenId()
+            TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
+        end
+    end)
+end, false)
+
+RegisterCommand(Config.BillPlayerCommand, function()
+    if not HasBillingPermission() then
+        local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
+        NotifyPlayer("You don't have permission to bill players! [Job: " .. (jobName or "none") .. ", Grade: " .. (jobGrade or 0) .. "]", "Error", "error")
+        return
+    end
+    CheckBillingItem(function(hasItem)
+        if hasItem then OpenQuickBillUI() end
+    end)
+end, false)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if (GetCurrentResourceName() ~= resourceName) then return end
+    CloseQuickBillUI()
+end)

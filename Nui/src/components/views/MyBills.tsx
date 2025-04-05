@@ -14,6 +14,14 @@ interface MyBillsProps {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  
+  /* Fix scrolling container */
+  & > *:not(:last-child) {
+    flex-shrink: 0;
+  }
 `;
 
 const Header = styled.div`
@@ -31,10 +39,46 @@ const Title = styled.h2`
   color: var(--text-primary);
 `;
 
+const BillsContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+  padding: 0.5rem;
+  
+  /* Better scrollbar */
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
 const BillsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
+  max-width: 100%;
+  padding: 0.5rem 0.5rem 1.5rem 0.5rem;
+  
+  /* Ensure grid items don't exceed container width */
+  & > * {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const MyBills: React.FC<MyBillsProps> = ({ hideHeader = false }) => {
@@ -82,26 +126,28 @@ const MyBills: React.FC<MyBillsProps> = ({ hideHeader = false }) => {
         </Header>
       )}
 
-      {myBills.length === 0 ? (
-        <EmptyState
-          icon={<FaFolderOpen />}
-          title={getLocale('noBillsAvailable', 'No Bills Available')}
-          description={getLocale(
-            'noBillsAvailableDescription',
-            "You currently don't have any bills. Check back later!"
-          )}
-        />
-      ) : (
-        <BillsGrid>
-          {filteredBills.map((bill) => (
-            <BillCard
-              key={bill.id}
-              bill={bill}
-              onClick={() => handleBillClick(bill.id)}
-            />
-          ))}
-        </BillsGrid>
-      )}
+      <BillsContainer>
+        {myBills.length === 0 ? (
+          <EmptyState
+            icon={<FaFolderOpen />}
+            title={getLocale('noBillsAvailable', 'No Bills Available')}
+            description={getLocale(
+              'noBillsAvailableDescription',
+              "You currently don't have any bills. Check back later!"
+            )}
+          />
+        ) : (
+          <BillsGrid>
+            {filteredBills.map((bill) => (
+              <BillCard
+                key={bill.id}
+                bill={bill}
+                onClick={() => handleBillClick(bill.id)}
+              />
+            ))}
+          </BillsGrid>
+        )}
+      </BillsContainer>
 
       {showModal && selectedBill && (
         <BillDetailsModal

@@ -48,7 +48,35 @@ Config.Locales = {
             billedByLabel = "Billed by",
             time = "Time",
             viewReceipt = "View Receipt",
-            viewDetails = "View Details"
+            viewDetails = "View Details",
+            paidStatus = "Paid",
+            pendingStatus = "Pending",
+            canceledStatus = "Canceled",
+            refundedStatus = "Refunded",
+            success = "Success",
+            error = "Error",
+            invalid_bill_data = "Invalid bill data",
+            bill_sent = "Bill sent"
+        },
+        notifications = {
+            -- Refund notification messages
+            refundTitle = "Refund Request",
+            refundInitiated = "Refund request submitted. Please wait for confirmation.",
+            refundSuccess = "Bill refunded successfully.",
+            refundFailed = "Failed to refund bill. Please try again later.",
+            
+            -- Cancel notification messages
+            cancelTitle = "Bill Cancellation",
+            cancelInitiated = "Cancellation request submitted. Please wait for confirmation.",
+            cancelSuccess = "Bill canceled successfully.",
+            cancelFailed = "Failed to cancel bill. Please try again.",
+            
+            -- General notification messages
+            billNotFound = "Bill not found.",
+            billNotPaid = "This bill has not been paid.",
+            noPermission = "You don't have permission to perform this action.",
+            noPermissionCancel = "You don't have permission to cancel this bill.",
+            noPermissionRefund = "You don't have permission to refund this bill."
         },
         MyBills = {
             myBillsLabel = "My Bills",
@@ -100,6 +128,16 @@ Config.Locales = {
             dateLabel = "Date:",
             statusLabel = "Status:",
         },
+        QuickBill = {
+            quickBillTitle = "Quick Bill",
+            selectPlayer = "Select Player",
+            noNearbyPlayers = "No players nearby",
+            reason = "Reason",
+            reasonPlaceholder = "Enter reason for bill",
+            amount = "Amount",
+            sendBill = "Send Bill",
+            processing = "Processing..."
+        },
     },
     he = {
         Common = {
@@ -150,7 +188,35 @@ Config.Locales = {
             billedByLabel = "חויב על ידי",
             time = "שעה",
             viewReceipt = "הצג קבלה",
-            viewDetails = "הצג פרטים"
+            viewDetails = "הצג פרטים",
+            paidStatus = "שולם",
+            pendingStatus = "ממתין",
+            canceledStatus = "מבוטל",
+            refundedStatus = "הוחזר",
+            success = "הצלחה",
+            error = "שגיאה",
+            invalid_bill_data = "נתוני חשבונית לא תקינים",
+            bill_sent = "החשבונית נשלחה"
+        },
+        notifications = {
+            -- Refund notification messages in Hebrew
+            refundTitle = "בקשת החזר",
+            refundInitiated = "בקשת ההחזר הוגשה. אנא המתן לאישור.",
+            refundSuccess = "החזר החשבונית בוצע בהצלחה.",
+            refundFailed = "החזר החשבונית נכשל. אנא נסה שוב מאוחר יותר.",
+            
+            -- Cancel notification messages in Hebrew
+            cancelTitle = "ביטול חשבונית",
+            cancelInitiated = "בקשת הביטול הוגשה. אנא המתן לאישור.",
+            cancelSuccess = "החשבונית בוטלה בהצלחה.",
+            cancelFailed = "ביטול החשבונית נכשל. אנא נסה שוב.",
+            
+            -- General notification messages in Hebrew
+            billNotFound = "חשבונית לא נמצאה.",
+            billNotPaid = "חשבונית זו לא שולמה עדיין.",
+            noPermission = "אין לך הרשאה לבצע פעולה זו.",
+            noPermissionCancel = "אין לך הרשאה לבטל חשבונית זו.",
+            noPermissionRefund = "אין לך הרשאה להחזיר חשבונית זו."
         },
         MyBills = {
             myBillsLabel = "החשבוניות שלי",
@@ -202,6 +268,16 @@ Config.Locales = {
             dateLabel = "תאריך:",
             statusLabel = "סטטוס:",
         },
+        QuickBill = {
+            quickBillTitle = "חיוב מהיר",
+            selectPlayer = "בחר שחקן",
+            noNearbyPlayers = "אין שחקנים בקרבת מקום",
+            reason = "סיבה",
+            reasonPlaceholder = "הזן סיבה לחיוב",
+            amount = "סכום",
+            sendBill = "שלח חיוב",
+            processing = "מעבד..."
+        },
     },
     it = {
         Common = {
@@ -252,7 +328,35 @@ Config.Locales = {
             billedByLabel = "Fatturato da",
             time = "Ora",
             viewReceipt = "Visualizza Ricevuta",
-            viewDetails = "Visualizza Dettagli"
+            viewDetails = "Visualizza Dettagli",
+            paidStatus = "Pagato",
+            pendingStatus = "In Attesa",
+            canceledStatus = "Annullato",
+            refundedStatus = "Rimborsato",
+            success = "Successo",
+            error = "Errore",
+            invalid_bill_data = "Dati della fattura non validi",
+            bill_sent = "Fattura inviata"
+        },
+        notifications = {
+            -- Refund notification messages in Italian
+            refundTitle = "Richiesta di Rimborso",
+            refundInitiated = "Richiesta di rimborso inviata. Attendere la conferma.",
+            refundSuccess = "Fattura rimborsata con successo.",
+            refundFailed = "Impossibile rimborsare la fattura. Riprova più tardi.",
+            
+            -- Cancel notification messages in Italian
+            cancelTitle = "Annullamento Fattura",
+            cancelInitiated = "Richiesta di annullamento inviata. Attendere la conferma.",
+            cancelSuccess = "Fattura annullata con successo.",
+            cancelFailed = "Impossibile annullare la fattura. Riprova.",
+            
+            -- General notification messages in Italian
+            billNotFound = "Fattura non trovata.",
+            billNotPaid = "Questa fattura non è stata pagata.",
+            noPermission = "Non hai il permesso di eseguire questa azione.",
+            noPermissionCancel = "Non hai il permesso di annullare questa fattura.",
+            noPermissionRefund = "Non hai il permesso di rimborsare questa fattura."
         },
         MyBills = {
             myBillsLabel = "Le Mie Fatture",
@@ -304,6 +408,16 @@ Config.Locales = {
             dateLabel = "Data:",
             statusLabel = "Stato:",
         },
+        QuickBill = {
+            quickBillTitle = "Fatturazione Rapida",
+            selectPlayer = "Seleziona Giocatore",
+            noNearbyPlayers = "Nessun giocatore nelle vicinanze",
+            reason = "Motivo",
+            reasonPlaceholder = "Inserisci il motivo della fattura",
+            amount = "Importo",
+            sendBill = "Invia Fattura",
+            processing = "Elaborazione in corso..."
+        },
     },
     fr = {
         Common = {
@@ -354,7 +468,35 @@ Config.Locales = {
             billedByLabel = "Facturé par",
             time = "Heure",
             viewReceipt = "Voir le Reçu",
-            viewDetails = "Voir les Détails"
+            viewDetails = "Voir les Détails",
+            paidStatus = "Payé",
+            pendingStatus = "En Attente",
+            canceledStatus = "Annulé",
+            refundedStatus = "Remboursé",
+            success = "Succès",
+            error = "Erreur",
+            invalid_bill_data = "Données de facture non valides",
+            bill_sent = "Facture envoyée"
+        },
+        notifications = {
+            -- Refund notification messages in French
+            refundTitle = "Demande de Remboursement",
+            refundInitiated = "Demande de remboursement soumise. Veuillez attendre la confirmation.",
+            refundSuccess = "Facture remboursée avec succès.",
+            refundFailed = "Échec du remboursement de la facture. Veuillez réessayer plus tard.",
+            
+            -- Cancel notification messages in French
+            cancelTitle = "Annulation de Facture",
+            cancelInitiated = "Demande d'annulation soumise. Veuillez attendre la confirmation.",
+            cancelSuccess = "Facture annulée avec succès.",
+            cancelFailed = "Échec de l'annulation de la facture. Veuillez réessayer.",
+            
+            -- General notification messages in French
+            billNotFound = "Facture non trouvée.",
+            billNotPaid = "Cette facture n'a pas été payée.",
+            noPermission = "Vous n'avez pas la permission d'effectuer cette action.",
+            noPermissionCancel = "Vous n'avez pas la permission d'annuler cette facture.",
+            noPermissionRefund = "Vous n'avez pas la permission de rembourser cette facture."
         },
         MyBills = {
             myBillsLabel = "Mes Factures",
@@ -405,6 +547,16 @@ Config.Locales = {
             sentByLabel = "Envoyé par :",
             dateLabel = "Date :",
             statusLabel = "Statut :",
+        },
+        QuickBill = {
+            quickBillTitle = "Facturation Rapide",
+            selectPlayer = "Sélectionner un Joueur",
+            noNearbyPlayers = "Aucun joueur à proximité",
+            reason = "Raison",
+            reasonPlaceholder = "Entrez la raison de la facture",
+            amount = "Montant",
+            sendBill = "Envoyer Facture",
+            processing = "Traitement en cours..."
         },
     },
 }
