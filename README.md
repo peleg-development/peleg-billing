@@ -1,4 +1,4 @@
-# Peleg-Billing | v1.0.1 
+# Peleg-Billing | v1.2
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
@@ -55,10 +55,8 @@ data = {
 
 
 ### Preview
-[![YouTube Video](https://img.youtube.com/vi/0206ZIxeiGw/0.jpg)](https://youtu.be/0206ZIxeiGw)
-![image](https://github.com/user-attachments/assets/ae1720be-69c5-4554-9d2a-5da84a618529)
-![image](https://github.com/user-attachments/assets/6faad8d9-c8a9-45bd-b605-fcad2f7bcaa8)
-![image](https://github.com/user-attachments/assets/83ce2000-8682-4552-be2e-3dc727555dac)
-![image](https://github.com/user-attachments/assets/cdf1b8ac-aac8-41d7-9f0e-f882c80da6a9)
-![image](https://github.com/user-attachments/assets/e4f06956-cd0e-47f0-a014-700a4b38e5ca)
+![image](https://github.com/user-attachments/assets/0de7a2bd-6128-4265-92aa-b78c12dbac8a)
+![image](https://github.com/user-attachments/assets/513983fe-6077-430b-8bc4-d19f3953f95e)
+![image](https://github.com/user-attachments/assets/f5e8fa88-adc0-409c-bf06-731361dbc1f6)
+
 
