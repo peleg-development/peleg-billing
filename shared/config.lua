@@ -1,10 +1,12 @@
+print("^2Peleg^7-^2Billing ^7v^41^7.^40^7.^40 ^7- ^2Billing Script by ^1Peleg^7")
 Config = {}
 -- _______  ______ _______ _______ _______ _  _  _  _____   ______ _     _
 -- |______ |_____/ |_____| |  |  | |______ |  |  | |     | |_____/ |____/ 
 -- |       |    \_ |     | |  |  | |______ |__|__| |_____| |    \_ |    \_
 
+Config.Debug = false -- Enable or disable debug mode
 Config.Framework = "QB" -- Options: "QB" or "ESX"
-Config.BillingItem = "" -- Define the item here; leave empty for no item
+Config.BillingItem = "" -- Define the item here; leave empty for no item requirement
 Config.BillCommand = "bills" -- Define the command to open the billing menu
 Config.BillPlayerCommand = "billplayer" -- Command to open the quick billing UI
 

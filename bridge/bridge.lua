@@ -1,4 +1,9 @@
---- Bridge.lua - Framework Abstraction Layer for QBCore and ESX
+_print = print
+print = function(...)
+    if not Config.Debug then return end
+    _print(...)
+end
+
 ---@class Bridge
 Bridge = {}
 
@@ -555,12 +560,31 @@ if isServer then
         TriggerClientEvent('peleg-billing:client:notify', source, message, title, type)
     end
 
+    function Bridge.RegisterBillingItem()
+        if not Config.BillingItem or Config.BillingItem == "" then return end
+        if Config.Framework == "QB" then
+            QBCore.Functions.CreateUseableItem(Config.BillingItem, function(source)
+                local src = source
+                local Player = QBCore.Functions.GetPlayer(src)
+                if not Player then return end
+                
+                TriggerClientEvent('peleg-billing:client:useTablet', src)
+            end)
+        elseif Config.Framework == "ESX" then            
+            ESX.RegisterUsableItem(Config.BillingItem, function(source)
+                local src = source
+                TriggerClientEvent('peleg-billing:client:useTablet', src)
+            end)
+        end
+    end
+
     Citizen.CreateThread(function()
         Wait(1000)
         if not InitFramework() then 
             print("Failed to initialize framework bridge")
             return 
         end
+        Bridge.RegisterBillingItem()
         if Config.Framework == "ESX" then
             ESX.RegisterServerCallback('peleg-billing:hasItem', function(source, cb, itemName)
                 local xPlayer = ESX.GetPlayerFromId(source)

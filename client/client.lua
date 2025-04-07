@@ -8,6 +8,8 @@ local quickBillTimer = nil
 local lastNearbyPlayersCheck = 0
 ---@type number Cooldown between nearby player checks in milliseconds.
 local nearbyPlayersCooldown = 1500
+---@type number Active prop entity handle
+local activePropObject = nil
 
 --- Retrieves the current locale from the Bridge.
 ---@return table Current locale table.
@@ -46,6 +48,57 @@ function SendUIMessage(type, data)
     })
 end
 
+--- Starts the billing animation with a prop.
+function StartBillingAnimation()
+    if not Config.AnimationConfig.Enabled then return end
+    
+    if activePropObject then
+        DeleteEntity(activePropObject)
+        activePropObject = nil
+    end
+    
+    local playerPed = PlayerPedId()
+    local propName = Config.AnimationConfig.Prop
+    local propBone = Config.AnimationConfig.PropBone
+    local propPlacement = Config.AnimationConfig.PropPlacement
+    local dict = Config.AnimationConfig.Dict
+    local anim = Config.AnimationConfig.Anim
+    
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do
+        Wait(10)
+    end
+    
+    local propHash = GetHashKey(propName)
+    RequestModel(propHash)
+    while not HasModelLoaded(propHash) do
+        Wait(10)
+    end
+    
+    local x, y, z = table.unpack(GetEntityCoords(playerPed))
+    activePropObject = CreateObject(propHash, x, y, z + 0.2, true, true, true)
+    local boneIndex = GetPedBoneIndex(playerPed, propBone)
+    
+    AttachEntityToEntity(activePropObject, playerPed, boneIndex, 
+                        propPlacement[1], propPlacement[2], propPlacement[3], 
+                        propPlacement[4], propPlacement[5], propPlacement[6], 
+                        true, true, false, true, 1, true)
+    
+    TaskPlayAnim(playerPed, dict, anim, 8.0, 8.0, -1, 49, 0, false, false, false)
+end
+
+--- Stops the billing animation and removes any props.
+function StopBillingAnimation()
+    if activePropObject then
+        DeleteEntity(activePropObject)
+        activePropObject = nil
+    end
+    
+    local playerPed = PlayerPedId()
+    ClearPedTasks(playerPed)
+    StopAnimTask(playerPed, Config.AnimationConfig.Dict, Config.AnimationConfig.Anim, 1.0)
+end
+
 --- Opens the billing menu UI.
 ---@param data table The data to send to the billing menu.
 function OpenBillingMenu(data)
@@ -66,6 +119,7 @@ function OpenQuickBillUI()
         if quickBillActive then CloseQuickBillUI() end
     end)
     SetNuiFocus(true, true)
+    StartBillingAnimation()
     SendNUIMessage({
         type = "openQuickBill",
         data = { locale = FlattenLocaleForNUI() }
@@ -81,6 +135,7 @@ function CloseQuickBillUI()
         quickBillActive = false
         SendNUIMessage({ type = "forceCloseQuickBill" })
         SetNuiFocus(false, false)
+        StopBillingAnimation()
     end
 end
 
@@ -132,6 +187,7 @@ end)
 
 RegisterNUICallback('peleg-billing:callback:close', function(data, cb)
     SetNuiFocus(false, false)
+    StopBillingAnimation()
     cb('ok')
 end)
 
@@ -253,6 +309,15 @@ RegisterCommand(Config.BillCommand, function()
     end)
 end, false)
 
+RegisterNetEvent('peleg-billing:client:useTablet', function()
+    CheckBillingItem(function(hasItem)
+        if hasItem then
+            local citizenId = Bridge.GetPlayerCitizenId()
+            TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
+        end
+    end)
+end)
+
 RegisterCommand(Config.BillPlayerCommand, function()
     if not HasBillingPermission() then
         local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
@@ -267,4 +332,5 @@ end, false)
 AddEventHandler('onResourceStop', function(resourceName)
     if (GetCurrentResourceName() ~= resourceName) then return end
     CloseQuickBillUI()
+    StopBillingAnimation()
 end)

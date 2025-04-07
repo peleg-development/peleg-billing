@@ -15,18 +15,18 @@ lua54 'yes'
 use_fxv2_oal 'yes'
 
 shared_scripts {
-    'bridge/bridge.lua',
     'shared/config.lua',
+    'bridge/bridge.lua',
     'locales/locales.lua',
 }
 
 client_scripts {
-    'client/Client.lua'
+    'client/client.lua'
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'Server/Server.lua'
+    'server/server.lua'
 }
 
 ui_page 'nui/build/index.html'
