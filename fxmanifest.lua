@@ -22,7 +22,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'Server/server.lua'
+    'server/server.lua'
 }
 
 ui_page 'nui/build/index.html'
