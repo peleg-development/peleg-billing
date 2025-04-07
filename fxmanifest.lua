@@ -1,9 +1,5 @@
 fx_version 'cerulean'
 
-shared_script "@SecureServe/src/module/module.lua"
-shared_script "@SecureServe/src/module/module.js"
-file "@SecureServe/secureserve.key"
-
 game 'gta5'
 
 author 'PelegMC'
@@ -21,12 +17,12 @@ shared_scripts {
 }
 
 client_scripts {
-    'client/Client.lua'
+    'client/client.lua'
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'Server/Server.lua'
+    'Server/server.lua'
 }
 
 ui_page 'nui/build/index.html'
