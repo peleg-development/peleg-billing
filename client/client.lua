@@ -48,7 +48,7 @@ function SendUIMessage(type, data)
     })
 end
 
---- Starts the billing animation with a prop.
+--- Starts the billing animation with a clipboard prop.
 function StartBillingAnimation()
     if not Config.AnimationConfig.Enabled then return end
     
@@ -87,7 +87,46 @@ function StartBillingAnimation()
     TaskPlayAnim(playerPed, dict, anim, 8.0, 8.0, -1, 49, 0, false, false, false)
 end
 
---- Stops the billing animation and removes any props.
+--- Starts the tablet animation for quick billing.
+function StartTabletAnimation()
+    if not Config.TabletAnimationConfig.Enabled then return end
+    
+    if activePropObject then
+        DeleteEntity(activePropObject)
+        activePropObject = nil
+    end
+    
+    local playerPed = PlayerPedId()
+    local propName = Config.TabletAnimationConfig.Prop
+    local propBone = Config.TabletAnimationConfig.PropBone
+    local propPlacement = Config.TabletAnimationConfig.PropPlacement
+    local dict = Config.TabletAnimationConfig.Dict
+    local anim = Config.TabletAnimationConfig.Anim
+    
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do
+        Wait(10)
+    end
+    
+    local propHash = GetHashKey(propName)
+    RequestModel(propHash)
+    while not HasModelLoaded(propHash) do
+        Wait(10)
+    end
+    
+    local x, y, z = table.unpack(GetEntityCoords(playerPed))
+    activePropObject = CreateObject(propHash, x, y, z + 0.2, true, true, true)
+    local boneIndex = GetPedBoneIndex(playerPed, propBone)
+    
+    AttachEntityToEntity(activePropObject, playerPed, boneIndex, 
+                        propPlacement[1], propPlacement[2], propPlacement[3], 
+                        propPlacement[4], propPlacement[5], propPlacement[6], 
+                        true, true, false, true, 1, true)
+    
+    TaskPlayAnim(playerPed, dict, anim, 8.0, 8.0, -1, 49, 0, false, false, false)
+end
+
+--- Stops any active animation and removes any props.
 function StopBillingAnimation()
     if activePropObject then
         DeleteEntity(activePropObject)
@@ -97,6 +136,7 @@ function StopBillingAnimation()
     local playerPed = PlayerPedId()
     ClearPedTasks(playerPed)
     StopAnimTask(playerPed, Config.AnimationConfig.Dict, Config.AnimationConfig.Anim, 1.0)
+    StopAnimTask(playerPed, Config.TabletAnimationConfig.Dict, Config.TabletAnimationConfig.Anim, 1.0)
 end
 
 --- Opens the billing menu UI.
@@ -109,6 +149,7 @@ function OpenBillingMenu(data)
         data = data
     })
     SetNuiFocus(true, true)
+    StartBillingAnimation()
 end
 
 --- Opens the quick bill UI and sets a timeout to close it.
@@ -119,7 +160,7 @@ function OpenQuickBillUI()
         if quickBillActive then CloseQuickBillUI() end
     end)
     SetNuiFocus(true, true)
-    StartBillingAnimation()
+    StartTabletAnimation()
     SendNUIMessage({
         type = "openQuickBill",
         data = { locale = FlattenLocaleForNUI() }
@@ -143,6 +184,12 @@ end
 ---@param callback function A callback function that receives a boolean.
 function CheckBillingItem(callback)
     Bridge.CheckBillingItem(callback)
+end
+
+--- Checks if the player has the quick bill tablet item.
+---@param callback function A callback function that receives a boolean.
+function CheckQuickBillItem(callback)
+    Bridge.CheckQuickBillItem(callback)
 end
 
 --- Returns whether the player has billing permission.
@@ -179,10 +226,29 @@ end)
 RegisterNetEvent('peleg-billing:client:checkBalanceResponse', function(hasEnough)
 end)
 
+RegisterNetEvent('peleg-billing:client:useTablet', function()
+    CheckBillingItem(function(hasItem)
+        if hasItem then
+            local citizenId = Bridge.GetPlayerCitizenId()
+            TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
+        end
+    end)
+end)
+
+RegisterNetEvent('peleg-billing:client:useQuickBillTablet', function()
+    if not HasBillingPermission() then
+        local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
+        NotifyPlayer("You don't have permission to bill players! [Job: " .. (jobName or "none") .. ", Grade: " .. (jobGrade or 0) .. "]", "Error", "error")
+        return
+    end
+    OpenQuickBillUI()
+end)
+
 -- NUI Callbacks
 
 RegisterNUICallback('close', function()
     SetNuiFocus(false, false)
+    StopBillingAnimation()
 end)
 
 RegisterNUICallback('peleg-billing:callback:close', function(data, cb)
@@ -309,22 +375,13 @@ RegisterCommand(Config.BillCommand, function()
     end)
 end, false)
 
-RegisterNetEvent('peleg-billing:client:useTablet', function()
-    CheckBillingItem(function(hasItem)
-        if hasItem then
-            local citizenId = Bridge.GetPlayerCitizenId()
-            TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
-        end
-    end)
-end)
-
 RegisterCommand(Config.BillPlayerCommand, function()
     if not HasBillingPermission() then
         local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
         NotifyPlayer("You don't have permission to bill players! [Job: " .. (jobName or "none") .. ", Grade: " .. (jobGrade or 0) .. "]", "Error", "error")
         return
     end
-    CheckBillingItem(function(hasItem)
+    CheckQuickBillItem(function(hasItem)
         if hasItem then OpenQuickBillUI() end
     end)
 end, false)

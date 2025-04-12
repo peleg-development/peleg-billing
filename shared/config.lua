@@ -7,6 +7,7 @@ Config = {}
 Config.Debug = false -- Enable or disable debug mode
 Config.Framework = "QB" -- Options: "QB" or "ESX"
 Config.BillingItem = "" -- Define the item here; leave empty for no item requirement
+Config.QuickBillItem = "" -- Define the quick bill item here; leave empty to use the same as BillingItem
 Config.BillCommand = "bills" -- Define the command to open the billing menu
 Config.BillPlayerCommand = "billplayer" -- Command to open the quick billing UI
 
@@ -37,6 +38,17 @@ Config.AnimationConfig = {
     PropBone = 18905, -- Bone to attach the prop to
     PropPlacement = {0.1, 0.02, 0.05, 10.0, 0.0, 0.0}, -- Prop placement coordinates
     Duration = 2500, -- Duration of the animation in ms
+}
+
+-- Tablet animation configuration for quick billing
+Config.TabletAnimationConfig = {
+    Enabled = true, -- Enable or disable the tablet animation
+    Dict = "amb@code_human_in_bus_passenger_idles@female@tablet@idle_a", -- Animation dictionary for tablet
+    Anim = "idle_a", -- Animation name for tablet
+    Prop = "prop_cs_tablet", -- Tablet prop model
+    PropBone = 60309, -- Bone to attach the tablet to (right hand)
+    PropPlacement = {0.03, 0.002, -0.0, 10.0, 160.0, 0.0}, -- Prop placement coordinates
+    Duration = -1, -- -1 for infinite duration until UI is closed
 }
 
 -- _____  _____  ______  _______

@@ -561,19 +561,111 @@ if isServer then
     end
 
     function Bridge.RegisterBillingItem()
-        if not Config.BillingItem or Config.BillingItem == "" then return end
-        if Config.Framework == "QB" then
-            QBCore.Functions.CreateUseableItem(Config.BillingItem, function(source)
-                local src = source
-                local Player = QBCore.Functions.GetPlayer(src)
-                if not Player then return end
+        if Config.BillingItem and Config.BillingItem ~= "" then
+            if Config.Framework == "QB" then
+                if QBCore and QBCore.Functions.GetItems then
+                    local itemExists = false
+                    local items = QBCore.Functions.GetItems()
+                    for _, item in pairs(items) do
+                        if item.name == Config.BillingItem then
+                            itemExists = true
+                            break
+                        end
+                    end
+                    
+                    if not itemExists then
+                        QBCore.Functions.AddItem(Config.BillingItem, {
+                            name = Config.BillingItem,
+                            label = 'Billing Clipboard',
+                            weight = 500,
+                            type = 'item',
+                            image = 'notepad.png',
+                            unique = false,
+                            useable = true,
+                            shouldClose = true,
+                            combinable = nil,
+                            description = 'A clipboard used for creating bills.'
+                        })
+                        
+                        print("^2[peleg-billing] Registered billing item: "..Config.BillingItem.."^7")
+                    end
+                    
+                    QBCore.Functions.CreateUseableItem(Config.BillingItem, function(source)
+                        local src = source
+                        local Player = QBCore.Functions.GetPlayer(src)
+                        if not Player then return end
+                        
+                        TriggerClientEvent('peleg-billing:client:useTablet', src)
+                    end)
+                end
+            elseif Config.Framework == "ESX" then
+                local result = MySQL.Sync.fetchAll("SELECT * FROM items WHERE name = ?", {Config.BillingItem})
+                if result and #result == 0 then
+                    MySQL.Sync.execute("INSERT INTO items (name, label, weight) VALUES (?, ?, ?)", 
+                        {Config.BillingItem, "Billing Clipboard", 0.5})
+                    print("^2[peleg-billing] Created billing item in database: "..Config.BillingItem.."^7")
+                end
                 
-                TriggerClientEvent('peleg-billing:client:useTablet', src)
-            end)
-        elseif Config.Framework == "ESX" then            
-            ESX.RegisterUsableItem(Config.BillingItem, function(source)
+                ESX.RegisterUsableItem(Config.BillingItem, function(source)
+                    local src = source
+                    TriggerClientEvent('peleg-billing:client:useTablet', src)
+                end)
+            end
+        end
+        
+        local quickBillItem = Config.QuickBillItem
+        
+        if (not quickBillItem or quickBillItem == "") then
+            return
+        end
+        
+        if Config.Framework == "QB" then
+            if QBCore and QBCore.Functions.GetItems then
+                local itemExists = false
+                local items = QBCore.Functions.GetItems()
+                for _, item in pairs(items) do
+                    if item.name == quickBillItem then
+                        itemExists = true
+                        break
+                    end
+                end
+                
+                if not itemExists then
+                    QBCore.Functions.AddItem(quickBillItem, {
+                        name = quickBillItem,
+                        label = 'Billing Tablet',
+                        weight = 1000,
+                        type = 'item',
+                        image = 'tablet.png',
+                        unique = false,
+                        useable = true,
+                        shouldClose = true,
+                        combinable = nil,
+                        description = 'A tablet used for creating quick bills on the go.'
+                    })
+                    
+                    print("^2[peleg-billing] Registered quick bill tablet item: "..quickBillItem.."^7")
+                end
+                
+                QBCore.Functions.CreateUseableItem(quickBillItem, function(source)
+                    local src = source
+                    local Player = QBCore.Functions.GetPlayer(src)
+                    if not Player then return end
+                    
+                    TriggerClientEvent('peleg-billing:client:useQuickBillTablet', src)
+                end)
+            end
+        elseif Config.Framework == "ESX" then
+            local result = MySQL.Sync.fetchAll("SELECT * FROM items WHERE name = ?", {quickBillItem})
+            if result and #result == 0 then
+                MySQL.Sync.execute("INSERT INTO items (name, label, weight) VALUES (?, ?, ?)", 
+                    {quickBillItem, "Billing Tablet", 1.0})
+                print("^2[peleg-billing] Created quick bill tablet item in database: "..quickBillItem.."^7")
+            end
+            
+            ESX.RegisterUsableItem(quickBillItem, function(source)
                 local src = source
-                TriggerClientEvent('peleg-billing:client:useTablet', src)
+                TriggerClientEvent('peleg-billing:client:useQuickBillTablet', src)
             end)
         end
     end
@@ -749,11 +841,42 @@ else
         local callbackName = Config.Framework == "QB" and "QBCore:HasItem" or "peleg-billing:hasItem"
         Bridge.TriggerCallback(callbackName, function(hasItem)
             if not hasItem then
-                Bridge.Notify("You need a billing tablet to perform this action!", "Error", "error")
+                Bridge.Notify("You need a billing clipboard to perform this action!", "Error", "error")
             end
             callback(hasItem)
         end, Config.BillingItem)
     end
+
+    --- Checks if the player has the required quick bill item.
+    ---@param callback function
+    function Bridge.CheckQuickBillItem(callback)
+        local quickBillItem = Config.QuickBillItem
+        
+        -- If no specific quick bill item defined, fall back to regular billing item
+        if not quickBillItem or quickBillItem == "" then
+            Bridge.CheckBillingItem(callback)
+            return
+        end
+        
+        local callbackName = Config.Framework == "QB" and "QBCore:HasItem" or "peleg-billing:hasItem"
+        Bridge.TriggerCallback(callbackName, function(hasItem)
+            if not hasItem then
+                Bridge.Notify("You need a billing tablet to perform this action!", "Error", "error")
+            end
+            callback(hasItem)
+        end, quickBillItem)
+    end
+
+    --- Handle the usable tablet item on the client side
+    RegisterNetEvent('peleg-billing:client:useTablet', function()
+        local citizenId = Bridge.GetPlayerCitizenId()
+        if HasBillingPermission() then
+            TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
+        else
+            local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
+            Bridge.Notify("You don't have permission to use this tablet! [Job: " .. (jobName or "none") .. ", Grade: " .. (jobGrade or 0) .. "]", "Error", "error")
+        end
+    end)
 
     --- Triggers a callback on the client side.
     ---@param name string
