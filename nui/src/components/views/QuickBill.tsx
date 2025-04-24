@@ -1,19 +1,118 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNui } from '../../context/NuiContext';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import styled from 'styled-components';
+import { useNui } from '../../context/NuiContext';
+import { FaUser, FaDollarSign, FaInfoCircle, FaClipboardList, FaPlus, FaTimes } from 'react-icons/fa';
 
-const QuickBill: React.FC = () => {
-  const isMounted = useRef(true);
-  
+// Memoized QuickBill component to prevent unnecessary re-renders
+const QuickBill: React.FC = memo(() => {
   const { 
     showQuickBill, 
-    closeQuickBill, 
-    fetchNearbyPlayers, 
     nearbyPlayers, 
-    quickBillPlayer,
+    fetchNearbyPlayers, 
+    quickBillPlayer, 
+    closeQuickBill,
     getLocale,
     isLoading
   } = useNui();
+
+  // Component state
+  const [selectedPlayer, setSelectedPlayer] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [amount, setAmount] = useState<string>('');
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Fetch nearby players when component is shown
+  useEffect(() => {
+    if (showQuickBill) {
+      fetchNearbyPlayers();
+      // Reset form state
+      setSelectedPlayer('');
+      setReason('');
+      setAmount('');
+      setErrors({});
+    }
+  }, [showQuickBill, fetchNearbyPlayers]);
+
+  // Handle form submission with validation
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    const newErrors: {[key: string]: string} = {};
+    if (!selectedPlayer) {
+      newErrors.player = getLocale('selectPlayerError', 'Please select a player');
+    }
+    if (!reason.trim()) {
+      newErrors.reason = getLocale('reasonError', 'Please enter a reason');
+    }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      newErrors.amount = getLocale('amountError', 'Please enter a valid amount');
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    // Clear errors and submit
+    setErrors({});
+    quickBillPlayer(selectedPlayer, reason, Number(amount));
+  }, [selectedPlayer, reason, amount, getLocale, quickBillPlayer]);
+
+  // Close the quick bill UI
+  const handleClose = useCallback(() => {
+    closeQuickBill();
+  }, [closeQuickBill]);
+
+  // Prevent rendering if not visible
+  if (!showQuickBill) return null;
+
+  return (
+    <Container>
+      <QuickBillBox>
+        <Header>
+          <Title>
+            <FaClipboardList size={20} /> 
+            {getLocale('quickBillTitle', 'Quick Bill')}
+          </Title>
+          <CloseButton onClick={handleClose}>
+            <FaTimes size={18} />
+          </CloseButton>
+        </Header>
+
+        <Form onSubmit={handleSubmit}>
+          {/* Player selection */}
+          <FormGroup>
+            <Label>
+              <FaUser /> {getLocale('playerLabel', 'Player')}
+            </Label>
+            <SelectWrapper>
+              <Select 
+                value={selectedPlayer} 
+                onChange={(e) => setSelectedPlayer(e.target.value)}
+                className={errors.player ? 'error' : ''}
+              >
+                <option value="">{getLocale('selectPlayer', 'Select a player')}</option>
+                {nearbyPlayers.map((player) => (
+                  <option key={player.id} value={player.cid}>
+                    {player.name}
+                  </option>
+                ))}
+              </Select>
+              {isLoading && <LoadingIndicator>{getLocale('loading', 'Loading...')}</LoadingIndicator>}
+            </SelectWrapper>
+            {errors.player && <ErrorText>{errors.player}</ErrorText>}
+          </FormGroup>
+
+          {/* Reason input */}
+          <FormGroup>
+            <Label>
+              <FaInfoCircle /> {getLocale('reasonLabel', 'Reason')}
+            </Label>
+            <Input 
+              type="text" 
+              value={reason} 
+              onChange={(e) => setReason(e.target.value)}
   
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');

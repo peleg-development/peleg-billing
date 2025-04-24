@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import { NuiProvider, useNui } from './context/NuiContext';
 import Dashboard from './components/layout/Dashboard';
 import PlayerBills from './components/views/PlayerBills';
 import QuickBill from './components/views/QuickBill';
 import styled, { keyframes } from 'styled-components';
 
+// Main App component that sets up the NUI provider
 const App: React.FC = () => {
   return (
     <NuiProvider>
@@ -13,12 +14,15 @@ const App: React.FC = () => {
   );
 };
 
-const AppContent: React.FC = () => {
+// Memoize the app content to prevent unnecessary re-renders
+const AppContent: React.FC = memo(() => {
   const { showMenu, showQuickBill, isClosing } = useNui();
   
+  // Handle escape key for closing menus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && (showMenu || showQuickBill)) {  
+      if (e.key === 'Escape' && (showMenu || showQuickBill)) {
+        // Handled by the game's ESC key handler
       }
     };
     
@@ -26,10 +30,12 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showMenu, showQuickBill]);
 
+  // Don't render anything if UI is not visible
   if (!showMenu && !showQuickBill && !isClosing) return null;
 
   return (
     <>
+      {/* Main billing menu */}
       {showMenu && (
         <Container $visible={showMenu} $isClosing={isClosing}>
           <BackgroundBlur />
@@ -42,12 +48,14 @@ const AppContent: React.FC = () => {
         </Container>
       )}
       
+      {/* Additional components */}
       <PlayerBills />
       <QuickBill />
     </>
   );
-};
+});
 
+// Animations
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -68,13 +76,14 @@ const scaleOut = keyframes`
   to { opacity: 0; transform: scale(0.97); }
 `;
 
+// Styled components
 const Container = styled.div<{ $visible: boolean; $isClosing: boolean }>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  display: ${({ $visible }) => ($visible ? 'flex' : 'none')};
+  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;

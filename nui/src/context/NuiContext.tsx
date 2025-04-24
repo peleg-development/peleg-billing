@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 
 export interface Bill {
   id: string;
@@ -79,6 +79,7 @@ const isEnvBrowser = () => !(window as any).invokeNative;
 
 const fetchNui = async (eventName: string, data: any = {}) => {
   if (isEnvBrowser()) {
+    console.log(`[NUI] Would call ${eventName} with:`, data);
     return { ok: true };
   }
 
@@ -332,6 +333,17 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           
           return newState;
         });
+      } else if (data.type === 'forceCloseQuickBill') {
+        setState(prev => ({
+          ...prev,
+          showQuickBill: false
+        }));
+      } else if (data.type === 'updatePlayers') {
+        const players = Array.isArray(data.players) ? data.players : [];
+        setState(prev => ({ 
+          ...prev, 
+          players
+        }));
       }
     };
 
@@ -372,10 +384,8 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.log('[QuickBill] Fetching nearby players...');
       
       const response = await fetchNui('peleg-billing:callback:getNearbyPlayers');
-      console.log('[QuickBill] Response received:', response);
       
       if (Array.isArray(response)) {
-        console.log('[QuickBill] Response is array');
         setState(prev => ({ 
           ...prev, 
           nearbyPlayers: response.map((p: any) => ({
@@ -385,7 +395,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }))
         }));
       } else if (response && Array.isArray(response.players)) {
-        console.log('[QuickBill] Response has players array');
         setState(prev => ({ 
           ...prev, 
           nearbyPlayers: response.players.map((p: any) => ({
@@ -395,7 +404,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }))
         }));
       } else {
-        console.log('[QuickBill] No valid nearby players found');
         setState(prev => ({ ...prev, nearbyPlayers: [] }));
       }
     } catch (error) {
@@ -406,7 +414,7 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
-  const fetchOnlinePlayers = async (query: string) => {
+  const fetchOnlinePlayers = useCallback(async (query: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
@@ -420,18 +428,17 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.error('Error fetching online players:', error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  };
+  }, []);
 
-  const closeUI = () => {
+  const closeUI = useCallback(() => {
     setState(prev => ({ ...prev, isClosing: true }));
     fetchNui('peleg-billing:callback:close', {});
     setTimeout(() => {
       setState(prev => ({ ...prev, showMenu: false, isClosing: false }));
     }, 300); 
-    
-  };
+  }, []);
 
-  const closeQuickBill = () => {
+  const closeQuickBill = useCallback(() => {
     setState(prev => ({ ...prev, showQuickBill: false }));
     
     try {
@@ -439,337 +446,182 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error('Error closing QuickBill UI:', error);
     }
-  };
+  }, []);
 
-  const payBill = async (billId: string) => {
+  const payBill = useCallback(async (billId: string) => {
     const bill = state.myBills.find(bill => bill.id === billId);
     
     if (bill) {
       try {
         const balanceResp = await fetchNui('peleg-billing:callback:checkBalance', { amount: bill.amount });
         
-        if (balanceResp.hasEnough) {
-          const response = await fetchNui('peleg-billing:callback:payBill', { 
-            billId, 
-            payFromJobAccount: false 
-          });
-          
-          if (response === 'ok') {
-            setState(prev => ({
-              ...prev,
-              myBills: prev.myBills.filter(b => b.id !== billId),
-              billingHistory: [...prev.billingHistory, { ...bill, paid: true }],
-              selectedBill: null
-            }));
-            
-            fetchNui('peleg-billing:callback:notify', {
-              title: 'Success',
-              message: 'Bill paid successfully',
-              type: 'success'
-            });
-          }
-        } else {
+        if (balanceResp?.hasEnough === false) {
           fetchNui('peleg-billing:callback:notify', {
-            title: 'Error',
-            message: 'You do not have enough money to pay this bill',
+            message: state.localeValues['notEnoughMoney'] || 'You do not have enough money to pay this bill.',
+            title: state.localeValues['error'] || 'Error',
             type: 'error'
           });
+          return;
         }
+        
+        fetchNui('peleg-billing:callback:payBill', { billId, payFromJobAccount: false });
+        
+        setState(prev => {
+          const updatedBill = { ...bill, status: 'paid', paid: true };
+          
+          return {
+            ...prev,
+            myBills: prev.myBills.filter(b => b.id !== billId),
+            billingHistory: [updatedBill, ...prev.billingHistory],
+            selectedBill: prev.selectedBill?.id === billId ? updatedBill : prev.selectedBill
+          };
+        });
+        
+        fetchNui('peleg-billing:callback:notify', {
+          message: `${state.localeValues['billPaid'] || 'Bill paid successfully'} - $${bill.amount}`,
+          title: state.localeValues['success'] || 'Success',
+          type: 'success'
+        });
+        
+        setTimeout(() => {
+          fetchNui('peleg-billing:callback:getBillingStats', {});
+        }, 500);
       } catch (error) {
         console.error('Error paying bill:', error);
         fetchNui('peleg-billing:callback:notify', {
-          title: 'Error',
-          message: 'Failed to pay the bill',
+          message: state.localeValues['errorPayingBill'] || 'Error processing payment.',
+          title: state.localeValues['error'] || 'Error',
           type: 'error'
         });
       }
     }
-  };
+  }, [state.myBills, state.localeValues]);
 
-  const billPlayer = async (cid: string, reason: string, amount: number) => {
+  const billPlayer = useCallback(async (cid: string, reason: string, amount: number) => {
     if (!cid || !reason || !amount) {
+      fetchNui('peleg-billing:callback:notify', {
+        message: state.localeValues['emptyFields'] || 'Please fill in all fields.',
+        title: state.localeValues['error'] || 'Error',
+        type: 'error'
+      });
+      return;
+    }
+    
+    if (amount <= 0) {
+      fetchNui('peleg-billing:callback:notify', {
+        message: state.localeValues['invalidAmount'] || 'Amount must be greater than 0.',
+        title: state.localeValues['error'] || 'Error',
+        type: 'error'
+      });
       return;
     }
 
     try {
-      const response = await fetchNui('peleg-billing:callback:billPlayer', {
-        cid,
-        reason,
-        amount: parseFloat(amount.toString())
-      });
-
-      if (response === 'ok') {
-        setState(prev => ({ ...prev, selectedPlayer: null }));
-        
-        fetchNui('peleg-billing:callback:notify', {
-          title: 'Success',
-          message: 'Bill sent successfully',
-          type: 'success'
-        });
-      }
-    } catch (error) {
-      console.error('Error billing player:', error);
+      await fetchNui('peleg-billing:callback:billPlayer', { cid, reason, amount });
+      
       fetchNui('peleg-billing:callback:notify', {
-        title: 'Error',
-        message: 'Failed to send bill',
-        type: 'error'
-      });
-    }
-  };
-
-  const quickBillPlayer = useCallback(async (cid: string, reason: string, amount: number) => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      
-      await fetchNui('peleg-billing:callback:quickBillPlayer', {
-        cid,
-        reason,
-        amount,
+        message: state.localeValues['billSent'] || 'Bill sent successfully.',
+        title: state.localeValues['success'] || 'Success',
+        type: 'success'
       });
       
-      setState(prev => ({ ...prev, isLoading: false }));
-      
       setTimeout(() => {
-        setState(prev => ({ ...prev, showQuickBill: false }));
-        try {
-          fetchNui('peleg-billing:callback:closeQuickBill');
-        } catch (err) {
-          console.error('Error closing UI:', err);
-        }
-      }, 300);
+        fetchNui('peleg-billing:callback:getBillingStats', {
+          societyMode: state.showSocietyMenu
+        });
+      }, 500);
       
-      return true;
-    } catch (error) {
-      console.error('Failed to quick bill player:', error);
-      
-      setState(prev => ({ ...prev, isLoading: false }));
-      
-      setTimeout(() => {
-        setState(prev => ({ ...prev, showQuickBill: false }));
-        try {
-          fetchNui('peleg-billing:callback:closeQuickBill');
-        } catch (err) {
-          console.error('Error closing UI:', err);
-        }
-      }, 300);
-      
-      return false;
-    }
-  }, []);
-
-  const selectBill = (bill: Bill) => {
-    setState(prev => ({ ...prev, selectedBill: bill }));
-  };
-
-  const selectPlayer = (player: Player) => {
-    setState(prev => ({ ...prev, selectedPlayer: player }));
-  };
-
-  const clearSelectedPlayer = () => {
-    setState(prev => ({ ...prev, selectedPlayer: null }));
-  };
-
-  const fetchPlayerBills = async (cid: string) => {
-    try {
-      const player = state.players.find(p => p.cid === cid || p.id === cid) || {
-        id: cid,
-        name: 'Player ' + cid,
-        cid: cid
-      };
-      
-      setState(prev => ({ 
-        ...prev, 
-        selectedPlayer: player,
-        showSelectedPlayerMenu: true,
-        showMenu: true
-      }));
-      
-      try {
-        await fetchNui('peleg-billing:callback:fetchPlayerBills', { cid });
-        
-        setTimeout(() => {
-          if (state.selectedPlayerBills.length === 0) {
-            setState(prev => ({
-              ...prev,
-              selectedPlayerBills: [
-                {
-                  id: 'dummy1',
-                  amount: 150,
-                  reason: 'Fine',
-                  billedBy: { name: 'System', job: 'police' },
-                  date: new Date().toISOString().split('T')[0],
-                  time: new Date().toTimeString().split(' ')[0].substring(0, 5),
-                  paid: false
-                }
-              ],
-              showMenu: true
-            }));
-          }
-        }, 2000);
-      } catch (fetchError) {
-        console.error('Error fetching player bills:', fetchError);
-        
+      if (state.selectedPlayer) {
         setState(prev => ({
           ...prev,
-          selectedPlayerBills: [
-            {
-              id: 'dummy1',
-              amount: 150,
-              reason: 'Fine',
-              billedBy: { name: 'System', job: 'police' },
-              date: new Date().toISOString().split('T')[0],
-              time: new Date().toTimeString().split(' ')[0].substring(0, 5),
-              paid: false
-            }
-          ],
+          selectedPlayer: null,
+          showSelectedPlayerMenu: false,
           showMenu: true
         }));
       }
     } catch (error) {
-      console.error('Critical error in fetchPlayerBills:', error);
-      
-      setState(prev => ({
-        ...prev,
-        showSelectedPlayerMenu: true,
-        selectedPlayer: { id: cid, name: 'Player ' + cid, cid: cid },
-        selectedPlayerBills: [
-          {
-            id: 'dummy-fallback',
-            amount: 100,
-            reason: 'System Fine',
-            billedBy: { name: 'System', job: 'admin' },
-            date: new Date().toISOString().split('T')[0],
-            time: new Date().toTimeString().split(' ')[0].substring(0, 5),
-            paid: false
-          }
-        ],
-        showMenu: true
-      }));
+      console.error('Error sending bill:', error);
+      fetchNui('peleg-billing:callback:notify', {
+        message: state.localeValues['errorSendingBill'] || 'Error sending bill.',
+        title: state.localeValues['error'] || 'Error',
+        type: 'error'
+      });
     }
-  };
+  }, [state.localeValues, state.selectedPlayer, state.showSocietyMenu]);
 
-  const getLocale = (key: string, defaultValue: string = '') => {
-    return state.localeValues[key] || defaultValue;
-  };
-
-  const toggleDummyMode = () => {
-    if (state.developmentMode) {
-      setState(prev => ({ ...prev, developmentMode: false }));
-    } else {
-      loadDummyData();
+  const quickBillPlayer = useCallback(async (cid: string, reason: string, amount: number) => {
+    try {
+      await fetchNui('peleg-billing:callback:quickBillPlayer', { cid, reason, amount });
+    } catch (error) {
+      console.error('Error sending quick bill:', error);
     }
-  };
-
-  const loadDummyData = () => {
-    const dummyData = {
-      myBills: [
-        {
-          id: 'bill1',
-          amount: 350.00,
-          reason: 'Medical Services',
-          billedBy: { name: 'Dr. Smith', job: 'EMS' },
-          date: '2023-05-15',
-          time: '14:30',
-          paid: false
-        },
-        {
-          id: 'bill2',
-          amount: 120.75,
-          reason: 'Speeding Ticket',
-          billedBy: { name: 'Officer Johnson', job: 'Police' },
-          date: '2023-05-12',
-          time: '09:45',
-          paid: false
-        },
-        {
-          id: 'bill3',
-          amount: 85.50,
-          reason: 'Vehicle Repair',
-          billedBy: { name: 'Mike\'s Mechanics', job: 'Mechanic' },
-          date: '2023-05-10',
-          time: '16:20',
-          paid: true
-        }
-      ],
-      societyBills: [
-        {
-          id: 'soc1',
-          amount: 560.00,
-          reason: 'Equipment Purchase',
-          billedBy: { name: 'Supply Co.', job: 'Admin' },
-          date: '2023-05-14',
-          time: '11:15',
-          paid: true
-        },
-        {
-          id: 'soc2',
-          amount: 890.25,
-          reason: 'Building Maintenance',
-          billedBy: { name: 'City Services', job: 'Maintenance' },
-          date: '2023-05-09',
-          time: '15:40',
-          paid: true
-        }
-      ],
-      billingHistory: [
-        {
-          id: 'hist1',
-          amount: 230.00,
-          reason: 'Property Tax',
-          billedBy: { name: 'City Hall', job: 'Government' },
-          date: '2023-04-30',
-          time: '10:00',
-          paid: true
-        },
-        {
-          id: 'hist2',
-          amount: 75.00,
-          reason: 'Weapons License',
-          billedBy: { name: 'Officer Williams', job: 'Police' },
-          date: '2023-04-25',
-          time: '13:20',
-          paid: true
-        }
-      ],
-      nearbyPlayers: [
-        { id: 'player1', name: 'John Doe', cid: 'CID123456' },
-        { id: 'player2', name: 'Jane Smith', cid: 'CID789012' },
-        { id: 'player3', name: 'Robert Johnson', cid: 'CID345678' }
-      ],
-      players: [
-        { id: 'player4', name: 'Alice Williams', cid: 'CID901234' },
-        { id: 'player5', name: 'Bob Anderson', cid: 'CID567890' },
-        { id: 'player6', name: 'Carol Davis', cid: 'CID234567' }
-      ],
-      showSocietyMenu: true,
-      showInspectCitizen: true,
-      canBill: true
-    };
-
-    setState(prev => ({
-      ...prev,
-      developmentMode: true,
-      myBills: dummyData.myBills,
-      societyBills: dummyData.societyBills,
-      billingHistory: dummyData.billingHistory,
-      nearbyPlayers: dummyData.nearbyPlayers,
-      players: dummyData.players,
-      showSocietyMenu: dummyData.showSocietyMenu,
-      showInspectCitizen: dummyData.showInspectCitizen,
-      canBill: dummyData.canBill
-    }));
-  };
-
-  const closePlayerBills = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      showSelectedPlayerMenu: false,
-      selectedPlayer: null,
-      selectedPlayerBills: []
-    }));
   }, []);
 
-  const contextValue: NuiContextValue = {
+  const selectBill = useCallback((bill: Bill) => {
+    setState(prev => ({ ...prev, selectedBill: bill }));
+  }, []);
+
+  const selectPlayer = useCallback((player: Player) => {
+    setState(prev => ({ ...prev, selectedPlayer: player }));
+  }, []);
+
+  const clearSelectedPlayer = useCallback(() => {
+    setState(prev => ({ ...prev, selectedPlayer: null }));
+  }, []);
+
+  const fetchPlayerBills = useCallback(async (cid: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const response = await fetchNui('peleg-billing:callback:fetchPlayerBills', { cid });
+      
+      if (response && Array.isArray(response.bills)) {
+        setState(prev => ({
+          ...prev,
+          selectedPlayerBills: response.bills,
+          showSelectedPlayerMenu: true,
+          isLoading: false
+        }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          selectedPlayerBills: [],
+          showSelectedPlayerMenu: true,
+          isLoading: false
+        }));
+
+        fetchNui('peleg-billing:callback:notify', {
+          message: state.localeValues['noPlayerBills'] || 'No bills found for this player.',
+          title: state.localeValues['info'] || 'Information',
+          type: 'primary'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching player bills:', error);
+      setState(prev => ({ 
+        ...prev, 
+        selectedPlayerBills: [],
+        showSelectedPlayerMenu: true,
+        isLoading: false 
+      }));
+    }
+  }, [state.localeValues]);
+
+  const getLocale = useCallback((key: string, defaultValue: string = '') => {
+    return state.localeValues[key] || defaultValue;
+  }, [state.localeValues]);
+
+  const toggleDummyMode = useCallback(() => {
+    setState(prev => {
+      if (prev.developmentMode) {
+        return { ...prev, developmentMode: false };
+      } else {
+        return { ...prev, developmentMode: true };
+      }
+    });
+  }, []);
+
+  const contextValue = useMemo(() => ({
     ...state,
     fetchNearbyPlayers,
     fetchOnlinePlayers,
@@ -786,9 +638,29 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     toggleDummyMode,
     setState,
     closePlayerBills
-  };
+  }), [
+    state,
+    fetchNearbyPlayers,
+    fetchOnlinePlayers,
+    closeUI,
+    closeQuickBill,
+    payBill,
+    billPlayer,
+    quickBillPlayer,
+    selectBill,
+    selectPlayer,
+    clearSelectedPlayer,
+    fetchPlayerBills,
+    getLocale,
+    toggleDummyMode,
+    closePlayerBills
+  ]);
 
-  return <NuiContext.Provider value={contextValue}>{children}</NuiContext.Provider>;
+  return (
+    <NuiContext.Provider value={contextValue}>
+      {children}
+    </NuiContext.Provider>
+  );
 };
 
 export const useNui = () => {
