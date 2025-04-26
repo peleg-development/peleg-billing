@@ -5,11 +5,21 @@ Config = {}
 -- |       |    \_ |     | |  |  | |______ |__|__| |_____| |    \_ |    \_
 
 Config.Debug = false -- Enable or disable debug mode
+
 Config.Framework = "QB" -- Options: "QB" or "ESX"
+
 Config.BillingItem = "" -- Define the item here; leave empty for no item requirement
+
 Config.QuickBillItem = "" -- Define the quick bill item here; leave empty to use the same as BillingItem
+
 Config.BillCommand = "bills" -- Define the command to open the billing menu
+
 Config.BillPlayerCommand = "billplayer" -- Command to open the quick billing UI
+
+Config.BillingMenuKey = "F5" -- Options: "None", "KyeName" | when u click on this key the billing menu will open
+
+Config.QuickBillingKey = "None" -- Options: "None", "KyeName" | when u click on this key the quick billing menu will open
+
 
 -- __   _  _____  _______ _____ _______ __   __
 -- | \  | |     |    |      |   |______   \_/  
@@ -55,6 +65,7 @@ Config.TabletAnimationConfig = {
 --   |   |     | |_____] |______
 -- __|   |_____| |_____] ______|
 
+-- Make sure to config this so other ranks or jobs can use the bill players
 Config.Jobs = {
     ['police'] = {
         ['1'] = { CanBill = true, BossAccess = true, InspectCitizen = true, CancelBill = true, RefundBill = true },

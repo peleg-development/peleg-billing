@@ -386,6 +386,34 @@ RegisterCommand(Config.BillPlayerCommand, function()
     end)
 end, false)
 
+Citizen.CreateThread(function()
+    if Config.BillingMenuKey ~= "None" then
+        RegisterKeyMapping(Config.BillingMenuKey, "Open Billing Menu", "keyboard", Config.BillingMenuKey)
+        if IsControlJustReleased(0, GetKeyMapping(Config.BillingMenuKey)) then
+            CheckBillingItem(function(hasItem)
+                if hasItem then
+                    local citizenId = Bridge.GetPlayerCitizenId()
+                    TriggerServerEvent('peleg-billing:requestBillingMenu', citizenId)
+                end
+            end)
+        end
+    end
+
+    if Config.QuickBillingKey ~= "None" then
+        RegisterKeyMapping(Config.QuickBillingKey, "Open Quick Billing Menu", "keyboard", Config.QuickBillingKey)
+        if IsControlJustReleased(0, GetKeyMapping(Config.QuickBillingKey)) then
+            if not HasBillingPermission() then
+                local playerData, jobName, jobGrade = Bridge.GetPlayerJobInfo()
+                NotifyPlayer("You don't have permission to bill players! [Job: " .. (jobName or "none") .. ", Grade: " .. (jobGrade or 0) .. "]", "Error", "error")
+                return
+            end
+            CheckQuickBillItem(function(hasItem)
+                if hasItem then OpenQuickBillUI() end
+            end)
+        end
+    end
+end)
+
 AddEventHandler('onResourceStop', function(resourceName)
     if (GetCurrentResourceName() ~= resourceName) then return end
     CloseQuickBillUI()

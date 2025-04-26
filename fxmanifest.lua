@@ -2,10 +2,9 @@ fx_version 'cerulean'
 
 game 'gta5'
 
-author 'PelegMC'
-name "peleg-billing"
-description "A simple billing script for FiveM"
-version "1.0.0"
+author 'Peleg' -- peleg_3
+description "An advacned billing script for FiveM"
+version "1.2.5"
 
 lua54 'yes'
 use_fxv2_oal 'yes'

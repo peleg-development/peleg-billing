@@ -775,3 +775,36 @@ function CanRefundBill(billId, playerId)
 
     return true, "Bill can be refunded"
 end
+
+
+Citizen.CreateThread(function()
+    local resName       = GetCurrentResourceName()
+    local currentVer    = GetResourceMetadata(resName, 'version', 0)
+
+    local versionURL    = 'https://gist.githubusercontent.com/peleg-development/bb6cc32c814a1b3018a78ee17d665bef/raw/b2205bc274a491662a8481a7779a9b709107ffcf/version.json'
+
+    PerformHttpRequest(versionURL, function(status, body)
+        if status ~= 200 then
+            print(("[^1%s^7] Failed to fetch version info (HTTP %d)"):format(resName, status))
+            return
+        end
+
+        local ok, data = pcall(json.decode, body)
+        if not ok or not data.version then
+            print(("[^1%s^7] Invalid version.json format"):format(resName))
+            return
+        end
+
+        if data.version ~= currentVer then
+            -- header
+            print(("[^4[%s]^7 New release available: %s  (you have %s)"):format(resName, data.version, currentVer))
+            if data.message then
+                for line in data.message:gmatch("[^\r\n]+") do
+                    print(("    %s"):format(line))
+                end
+            end
+        else
+            print(("[^2[%s]^7 is up to date (%s)"):format(resName, currentVer))
+        end
+    end, 'GET')
+end)
