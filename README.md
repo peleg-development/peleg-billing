@@ -1,4 +1,4 @@
-# Peleg-Billing | v1.2
+# Peleg-Billing | v1.2.5
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
 [![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
