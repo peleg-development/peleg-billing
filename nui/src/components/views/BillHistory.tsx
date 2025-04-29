@@ -89,7 +89,7 @@ const BillsGrid = styled.div`
 `;
 
 const StyledEmptyState = styled(EmptyState)`
-  margin-top: -20px;
+  padding: 5px;
 `;
 
 const BillHistory: React.FC<BillHistoryProps> = ({ hideHeader = false }) => {
@@ -100,7 +100,7 @@ const BillHistory: React.FC<BillHistoryProps> = ({ hideHeader = false }) => {
 
   const filteredBills = billingHistory.filter((bill: Bill) => {
     const search = searchTerm.toLowerCase();
-    return (
+    return ( 
       bill.reason.toLowerCase().includes(search) ||
       bill.billedBy.name.toLowerCase().includes(search) ||
       bill.amount.toString().includes(search)

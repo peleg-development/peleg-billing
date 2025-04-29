@@ -296,6 +296,7 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
     TriggerClientEvent('peleg-billing:client:receiveBills', src, bills)
 end)
 
+---@param searchQuery string|nil
 RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     local src = source
     local players = {}

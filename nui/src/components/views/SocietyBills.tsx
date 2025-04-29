@@ -103,7 +103,7 @@ const BillsGrid = styled.div`
 `;
 
 const StyledEmptyState = styled(EmptyState)`
-  margin-top: -20px;
+  padding: 5px;
 `;
 
 const SocietyBills: React.FC<SocietyBillsProps> = ({ hideHeader = false }) => {
