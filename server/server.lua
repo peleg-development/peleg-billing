@@ -785,26 +785,25 @@ Citizen.CreateThread(function()
 
     PerformHttpRequest(versionURL, function(status, body)
         if status ~= 200 then
-            print(("[^1%s^7] Failed to fetch version info (HTTP %d)"):format(resName, status))
+            _print(("[^1%s^7] Failed to fetch version info (HTTP %d)"):format(resName, status))
             return
         end
 
         local ok, data = pcall(json.decode, body)
         if not ok or not data.version then
-            print(("[^1%s^7] Invalid version.json format"):format(resName))
+            _print(("[^1%s^7] Invalid version.json format"):format(resName))
             return
         end
 
         if data.version ~= currentVer then
-            -- header
-            print(("[^4[%s]^7 New release available: %s  (you have %s)"):format(resName, data.version, currentVer))
+            _print(("[^4[%s]^7 New release available: %s  (you have %s)"):format(resName, data.version, currentVer))
             if data.message then
                 for line in data.message:gmatch("[^\r\n]+") do
-                    print(("    %s"):format(line))
+                    _print(("    %s"):format(line))
                 end
             end
         else
-            print(("[^2[%s]^7 is up to date (%s)"):format(resName, currentVer))
+            _print(("[^2[%s]^7 is up to date (%s)"):format(resName, currentVer))
         end
     end, 'GET')
 end)

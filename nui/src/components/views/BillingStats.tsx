@@ -727,7 +727,6 @@ const BillingStats: React.FC<BillingStatsProps> = ({ hideHeader = false }) => {
        typeof billingStats.totalPending === 'number');
     
     if (hasServerStats) {
-      console.log("Using server statistics data");
       
       const typedTopJobs: Array<[string, { count: number; amount: number }]> = 
         Array.isArray(billingStats.topJobs) 
@@ -768,7 +767,6 @@ const BillingStats: React.FC<BillingStatsProps> = ({ hideHeader = false }) => {
       };
     }
     
-    console.log("Falling back to client-side statistics calculation");
     const billsData = viewMode === 'personal' ? [...myBills, ...billingHistory] : societyBills;
     
     const totalPaid = billsData

@@ -4,7 +4,7 @@ game 'gta5'
 
 author 'Peleg' -- peleg_3
 description "An advacned billing script for FiveM"
-version "1.2.5"
+version "1.2.6"
 
 lua54 'yes'
 use_fxv2_oal 'yes'

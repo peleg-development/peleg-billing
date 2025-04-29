@@ -149,12 +149,7 @@ const Dashboard: React.FC = () => {
     }, 5000);
   }, []);
 
-  React.useEffect(() => {
-    console.log("Dashboard current view:", view);
-  }, [view]);
-
   const handleViewChange = (newView: string) => {
-    console.log("Changing view to:", newView);
     setView(newView);
 
     if (newView === 'billPlayer') {

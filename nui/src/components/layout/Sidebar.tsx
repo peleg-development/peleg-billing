@@ -122,8 +122,6 @@ const ServerInfo = styled.div`
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   const { showSocietyMenu, showInspectCitizen, canBill, getLocale } = useNui();
   
-  console.log("Sidebar current view:", currentView); // Debug
-
   return (
     <SidebarContainer>
       <Logo>

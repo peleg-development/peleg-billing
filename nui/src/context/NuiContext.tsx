@@ -369,13 +369,10 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      console.log('[QuickBill] Fetching nearby players...');
       
       const response = await fetchNui('peleg-billing:callback:getNearbyPlayers');
-      console.log('[QuickBill] Response received:', response);
       
       if (Array.isArray(response)) {
-        console.log('[QuickBill] Response is array');
         setState(prev => ({ 
           ...prev, 
           nearbyPlayers: response.map((p: any) => ({
@@ -385,7 +382,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }))
         }));
       } else if (response && Array.isArray(response.players)) {
-        console.log('[QuickBill] Response has players array');
         setState(prev => ({ 
           ...prev, 
           nearbyPlayers: response.players.map((p: any) => ({
@@ -395,7 +391,6 @@ export const NuiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }))
         }));
       } else {
-        console.log('[QuickBill] No valid nearby players found');
         setState(prev => ({ ...prev, nearbyPlayers: [] }));
       }
     } catch (error) {
