@@ -296,9 +296,18 @@ RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
     TriggerClientEvent('peleg-billing:client:receiveBills', src, bills)
 end)
 
----@param searchQuery string|nil
+local REQUEST_COOLDOWN = 3000
+local lastRequest      = {}    
+
 RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
     local src = source
+    local now = GetGameTimer()    
+
+    if lastRequest[src] and (now - lastRequest[src] < REQUEST_COOLDOWN) then
+        Wait(REQUEST_COOLDOWN)
+    end
+    lastRequest[src] = now
+
     local players = {}
     local lowerQuery = (searchQuery or ""):lower()
     local onlinePlayers = Bridge.GetAllPlayers()
