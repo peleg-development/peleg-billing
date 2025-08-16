@@ -1,6 +1,4 @@
-Here’s a cleaner, more professional **README.md** draft for your billing tablet resource:
 
----
 
 # Peleg-Billing
 
