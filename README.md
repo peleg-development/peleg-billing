@@ -129,5 +129,3 @@ SVConfig.Webhooks = {
 * **Discord:** [Join Here](https://discord.gg/9AuTeZPgrX)
 
 ---
-
-If you want, I can also make this README include **screenshots and a quick-start image guide** so it looks more premium for GitHub or Tebex listings. That would make it look much more appealing to buyers.
