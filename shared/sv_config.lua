@@ -1,4 +1,15 @@
-Config.Webhooks = {
-    SendBill = '', -- webhook for send bill
-    RefundBill = '', -- webhook for Refunt bill
+---@class BillingServerConfig
+---@field LogsEnabled boolean
+---@field Webhooks table<string, string>
+SVConfig = SVConfig or {}
+
+SVConfig.LogsEnabled = true
+
+SVConfig.Webhooks = {
+	createBill = '',
+	payBill = '',
+	refundBill = '',
+	setGradePerm = ''
 }
+
+

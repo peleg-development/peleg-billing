@@ -1,819 +1,583 @@
---- @param billId number|string
---- @return table|nil
-function GetBillById(billId)
-    if not billId then return nil end
-    local result = MySQL.query.await("SELECT * FROM bills WHERE id = ?", { billId })
-    return result and result[1] or nil
-end
+local Bridge = require('server.bridge')
+local LogsModule = require('server.logs')
+local Logs = LogsModule.Logs
+local Boss = require('server.boss')
 
---- @param billId number|string
---- @param status string
---- @param updatedBy string
---- @return boolean
-function UpdateBillStatus(billId, status, updatedBy)
-    if not billId or not status then return false end
-    local isPaid = (status == "paid")
-    local success = MySQL.Sync.execute('UPDATE bills SET status = ?, paid = ?, canceled_by = ? WHERE id = ?', {
-        status,
-        isPaid,
-        updatedBy,
-        billId
-    })
-    if success then
-        BroadcastBillUpdate(billId)
-    end
-    return success
-end
+local Locales = {}
 
---- Processes a refund for a given bill.
---- @param bill table
---- @return boolean
-function ProcessRefund(bill)
-    local amount = tonumber(bill.amount)
-    local receiver_cid = bill.receiver_cid
-    local job = bill.job
-
-    if not amount or amount <= 0 or not receiver_cid or not job then
-        print("^1[peleg-billing] ProcessRefund: Invalid bill data^7")
-        return false
-    end
-
-    local jobHasEnough = false
-    print("^3[peleg-billing] Checking if society " .. job .. " has enough money: $" .. amount .. "^7")
-
-    if Config.Framework == "QB" then
-        local societyAccount = exports['qb-management']:GetAccount(job)
-        print("^3[peleg-billing] QB Society account balance: $" .. (societyAccount or 0) .. "^7")
-        if societyAccount and societyAccount >= amount then
-            jobHasEnough = true
+--- Loads the active locale table from JSON file on resource start.
+local function loadLocale()
+    local code = (Config and Config.Locale) or 'en'
+    local resource = GetCurrentResourceName()
+    local rel = (('locale/%s.json'):format(code))
+    local path = ('%s/%s'):format(GetResourcePath(resource), rel)
+    local file = io.open(path, 'rb')
+    if not file then
+        if code ~= 'en' then
+            rel = 'locale/en.json'
+            path = ('%s/%s'):format(GetResourcePath(resource), rel)
+            file = io.open(path, 'rb')
         end
-    elseif Config.Framework == "ESX" then
-        local societyMoney = 0
-        local p = promise.new()
-        TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. job, function(account)
-            if account then
-                societyMoney = account.money
-                p:resolve(account.money >= amount)
-            else
-                print("^1[peleg-billing] Society account not found: society_" .. job .. "^7")
-                p:resolve(false)
-            end
-        end)
-        jobHasEnough = Citizen.Await(p)
-        print("^3[peleg-billing] ESX Society account balance: $" .. societyMoney .. "^7")
     end
-
-    if not jobHasEnough then
-        print("^1[peleg-billing] ProcessRefund: Society doesn't have enough money^7")
-        return false
+    if not file then
+        Locales = {}
+        return
     end
-
-    print("^2[peleg-billing] Removing money from society: " .. job .. " - Amount: " .. amount .. "^7")
-    local moneyRemoved = false
-
-    if Config.Framework == "QB" then
-        moneyRemoved = Bridge.RemoveMoneyFromSociety(job, amount)
-    elseif Config.Framework == "ESX" then
-        local p = promise.new()
-        TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. job, function(account)
-            if account and account.money >= amount then
-                account.removeMoney(amount)
-                p:resolve(true)
-            else
-                p:resolve(false)
-            end
-        end)
-        moneyRemoved = Citizen.Await(p)
-    end
-
-    if not moneyRemoved then
-        print("^1[peleg-billing] ProcessRefund: Failed to remove money from society^7")
-        return false
-    end
-
-    local receiver = Bridge.GetPlayerByCitizenId(receiver_cid)
-    if receiver then
-        print("^2[peleg-billing] Adding refund to online player: " .. receiver_cid .. " - Amount: " .. amount .. "^7")
-        if Bridge.AddMoney(receiver, "bank", amount, "bill-refund") then
-            print("^2[peleg-billing] Refund successful^7")
-            return true
-        else
-            print("^1[peleg-billing] ProcessRefund: Failed to add money to player^7")
-            return false
-        end
+    local content = file:read('*a')
+    file:close()
+    local ok, data = pcall(function() return json.decode(content) end)
+    if ok and type(data) == 'table' then
+        Locales = data
     else
-        print("^2[peleg-billing] Adding refund to offline player: " .. receiver_cid .. " - Amount: " .. amount .. "^7")
-        if Bridge.UpdateOfflinePlayerMoney(receiver_cid, amount) then
-            print("^2[peleg-billing] Offline refund successful^7")
-            return true
-        else
-            print("^1[peleg-billing] ProcessRefund: Failed to update offline player money^7")
-            return false
-        end
-    end
-
-    return false
-end
-
---- Broadcasts a bill update to all connected players.
---- @param billId number|string
-function BroadcastBillUpdate(billId)
-    local bill = GetBillById(billId)
-    if not bill then return end
-
-    local billData = {
-        id = bill.id,
-        amount = bill.amount,
-        reason = bill.reason,
-        sender = bill.sender_name,
-        billedBy = { name = bill.sender_name, cid = bill.sender_cid, job = bill.job },
-        receiver = bill.receiver_name,
-        date = bill.date,
-        time = bill.time,
-        paid = bill.paid,
-        status = bill.status or (bill.paid and "paid" or "pending"),
-        canceled = bill.status == "canceled",
-        refunded = bill.status == "refunded",
-        canceled_by = bill.canceled_by,
-        sender_cid = bill.sender_cid,
-        receiver_cid = bill.receiver_cid
-    }
-
-    local players = Bridge.GetPlayers()
-    for _, playerId in ipairs(players) do
-        TriggerClientEvent('peleg-billing:client:billStatusUpdated', playerId, billData)
+        Locales = {}
     end
 end
 
---- Retrieves all bills for a given citizen.
---- @param cid string
---- @return table, table
-function GetPlayerBills(cid)
-    local unpaidBills = {}
-    local billingHistory = {}
-    local billResults = MySQL.query.await("SELECT * FROM `bills` WHERE receiver_cid = ?", { cid })
-
-    for _, bill in ipairs(billResults) do
-        local senderName = bill.sender_name
-        local receiverName = bill.receiver_name
-        local job = bill.job
-
-        local billData = {
-            id = bill.id,
-            amount = bill.amount,
-            reason = bill.reason,
-            sender = senderName,
-            billedBy = { name = senderName, cid = bill.sender_cid, job = job },
-            receiver = receiverName,
-            date = bill.date,
-            time = bill.time,
-            paid = bill.paid,
-            status = bill.status or (bill.paid and "paid" or "pending"),
-            canceled = bill.status == "canceled",
-            refunded = bill.status == "refunded",
-            canceled_by = bill.canceled_by,
-            sender_cid = bill.sender_cid,
-            receiver_cid = bill.receiver_cid
-        }
-
-        if billData.status == "paid" or billData.paid then
-            table.insert(billingHistory, billData)
-        else
-            table.insert(unpaidBills, billData)
-        end
-    end
-
-    return unpaidBills, billingHistory
+--- Returns a localized string for the given key.
+---@param key string
+---@param fallback string
+local function L(key, fallback)
+    local v = Locales[key]
+    if v == nil or v == '' then return fallback end
+    return v
 end
 
---- Retrieves all society bills for a given job.
---- @param job string
---- @return table
-function GetSocietyBills(job)
-    local societyBills = {}
-    local billResults = MySQL.query.await("SELECT * FROM `bills` WHERE job = ?", { job })
-
-    for _, bill in ipairs(billResults) do
-        local senderName = bill.sender_name
-        local receiverName = bill.receiver_name
-
-        local billData = {
-            id = bill.id,
-            amount = bill.amount,
-            reason = bill.reason,
-            sender = senderName,
-            billedBy = { name = senderName, cid = bill.sender_cid, job = job },
-            receiver = receiverName,
-            date = bill.date,
-            time = bill.time,
-            paid = bill.paid,
-            status = bill.status or (bill.paid and "paid" or "pending"),
-            canceled = bill.status == "canceled",
-            refunded = bill.status == "refunded",
-            canceled_by = bill.canceled_by,
-            sender_cid = bill.sender_cid,
-            receiver_cid = bill.receiver_cid
-        }
-
-        table.insert(societyBills, billData)
+AddEventHandler('onResourceStart', function(res)
+    if res == GetCurrentResourceName() then
+        loadLocale()
     end
-
-    return societyBills
-end
-
-Citizen.CreateThread(function()
-    Wait(1000)
-    Bridge.RegisterCallback('peleg-billing:getPlayerName', function(source, cb, serverId)
-        local targetPlayer = Bridge.GetPlayer(tonumber(serverId))
-        if targetPlayer then
-            local cid, fullName, _ = Bridge.GetPlayerIdentifiers(targetPlayer)
-            cb({ name = fullName, cid = cid })
-        else
-            cb({ name = "Unknown", cid = "N/A" })
-        end
-    end)
-
-    Bridge.RegisterCallback('peleg-billing:getPlayerNameServer', function(source, cb, serverId)
-        local targetPlayer = Bridge.GetPlayer(serverId)
-        if targetPlayer then
-            local cid, fullName, _ = Bridge.GetPlayerIdentifiers(targetPlayer)
-            cb({ name = fullName, cid = cid })
-        else
-            cb({ name = "Unknown", cid = "N/A" })
-        end
-    end)
 end)
 
---- @param whType string
---- @param title string
---- @param message string
-local function sendToDiscord(whType, title, message)
-    local webhookURL = Config.Webhooks[whType]
-    if not webhookURL or webhookURL == "" then return end
-    local data = {
-        {
-            ["title"] = title,
-            ["description"] = message,
-            ["color"] = 3447003
-        }
-    }
-    PerformHttpRequest(webhookURL, function(err, text, headers) end, 'POST',
-        json.encode({ username = "Billing System", embeds = data }),
-        { ['Content-Type'] = 'application/json' }
-    )
+---@param src number
+---@return any, string, number
+local function getActorInfo(src)
+    local player = Bridge.getPlayer(src)
+    if not player then return nil, '', 0 end
+    local job, grade = Bridge.getJob(player)
+    return player, job, grade
 end
 
-RegisterNetEvent('peleg-billing:server:fetchPlayerBills', function(targetCid)
-    if not targetCid then return end
-    local src = source
-    local bills = MySQL.query.await([[
-        SELECT * FROM bills
-        WHERE receiver_cid = ?
-        ORDER BY date DESC, time DESC
-    ]], { targetCid })
-
-    if not bills then return end
-
-    for i, bill in ipairs(bills) do
-        bills[i] = {
-            id = bill.id,
-            amount = bill.amount,
-            reason = bill.reason,
-            billedBy = {
-                name = bill.sender_name,
-                job = bill.job
-            },
-            date = bill.date,
-            time = bill.time,
-            paid = (bill.paid == true or bill.paid == 1),
-            status = bill.status or (bill.paid and "paid" or "pending"),
-            canceled = (bill.status == "canceled"),
-            refunded = (bill.status == "refunded"),
-            canceled_by = bill.canceled_by
-        }
+---@param job string
+---@param cid string
+---@return number
+--- Loads the job access configuration from the database.
+---@param job string
+---@return table
+local function loadJobAccess(job)
+    local row = MySQL.single.await('SELECT data FROM billing_job_perms WHERE job = ?', { job })
+    if not row or not row.data or row.data == '' then
+        return { grades = {} }
     end
-
-    TriggerClientEvent('peleg-billing:client:receiveBills', src, bills)
-end)
-
-local REQUEST_COOLDOWN = 3000
-local lastRequest      = {}    
-
-RegisterNetEvent('peleg-billing:server:getOnlinePlayers', function(searchQuery)
-    local src = source
-    local now = GetGameTimer()    
-
-    if lastRequest[src] and (now - lastRequest[src] < REQUEST_COOLDOWN) then
-        Wait(REQUEST_COOLDOWN)
+    local ok, cfg = pcall(function() return json.decode(row.data) end)
+    if not ok or type(cfg) ~= 'table' then
+        return { grades = {} }
     end
-    lastRequest[src] = now
+    cfg.grades = cfg.grades or {}
+    return cfg
+end
 
-    local players = {}
-    local lowerQuery = (searchQuery or ""):lower()
-    local onlinePlayers = Bridge.GetAllPlayers()
-
-    for _, player in pairs(onlinePlayers) do
-        local cid, fullName, playerId = Bridge.GetPlayerIdentifiers(player)
-        if fullName and cid and (fullName:lower():find(lowerQuery) or cid:lower():find(lowerQuery)) then
-            table.insert(players, {
-                id = playerId,
-                name = fullName,
-                cid = cid,
-                online = true
-            })
-        end
+--- Persists the job access configuration in the database.
+---@param job string
+---@param config table
+local function saveJobAccess(job, config)
+    local payload = json.encode({ grades = config and config.grades or {} })
+    local exists = MySQL.scalar.await('SELECT 1 FROM billing_job_perms WHERE job = ? LIMIT 1', { job })
+    if exists then
+        MySQL.update.await('UPDATE billing_job_perms SET data = ? WHERE job = ?', { payload, job })
+    else
+        MySQL.insert.await('INSERT INTO billing_job_perms (job, data) VALUES (?, ?)', { job, payload })
     end
+end
 
-    if searchQuery and searchQuery ~= "" then
-        local offlinePlayers = Bridge.SearchOfflinePlayersByName(searchQuery)
-        for _, offlinePlayer in ipairs(offlinePlayers) do
-            local isDuplicate = false
-            for _, existingPlayer in ipairs(players) do
-                if existingPlayer.cid == offlinePlayer.cid then
-                    isDuplicate = true
-                    break
+--- Checks if a grade has a specific permission according to saved access config.
+---@param job string
+---@param grade number
+---@param permission 'sendBill'|'refundBill'
+---@return boolean
+local function hasPermission(job, grade, permission)
+    local cfg = loadJobAccess(job)
+    local entry = cfg.grades and cfg.grades[tostring(grade)] or nil
+    if type(entry) ~= 'table' then return false end
+    return entry[permission] == true
+end
+
+--- Returns the minimal grade that has sendBill permission for a job. Used by legacy UIs.
+---@param job string
+---@return number
+local function getMinGrade(job)
+    local cfg = loadJobAccess(job)
+    local minGrade = 0
+    if cfg and cfg.grades then
+        for k, v in pairs(cfg.grades) do
+            local lvl = tonumber(k) or 0
+            if v and v.sendBill == true then
+                if minGrade == 0 or lvl < minGrade then
+                    minGrade = lvl
                 end
             end
-            if not isDuplicate then
-                table.insert(players, offlinePlayer)
-            end
         end
     end
+    return minGrade
+end
 
-    TriggerClientEvent('peleg-billing:client:receiveOnlinePlayers', src, players)
-end)
-
-RegisterNetEvent('peleg-billing:server:billPlayer', function(data)
-    local src = source
-    local cid = data.cid
-    local amount = tonumber(data.amount)
-    local reason = data.reason
-
-    if not cid or not amount or not reason or amount <= 0 then
-        Bridge.NotifyPlayer(src, 'Invalid bill data', 'Error', 'error')
-        return
+---@param src number
+---@return boolean, string
+local function canOpenTablet(src)
+    local player, job, _ = getActorInfo(src)
+    if not player then return false, 'no_player' end
+    for _, j in ipairs(Config.TabletJobs or {}) do
+        if j == job then return true, '' end
     end
+    return false, 'job_not_allowed'
+end
 
-    local player = Bridge.GetPlayer(src)
+
+---@class Bill
+---@field id number
+---@field cid string
+---@field issuer_cid string
+---@field issuer_name string
+---@field job string
+---@field amount number
+---@field description string
+---@field account string
+---@field status string
+---@field created_at string
+---@field paid_at string|nil
+
+---@param cid string
+---@param limit number|nil
+---@param search string|nil
+---@return Bill[]
+local function fetchBillsByCid(cid, limit, search)
+    local query = 'SELECT * FROM billing_bills WHERE cid = ?'
+    local params = { cid }
+    
+    if search and search ~= '' then
+        query = query .. ' AND (issuer_name LIKE ? OR receiver_name LIKE ? OR description LIKE ? OR issuer_cid LIKE ? OR cid LIKE ?)'
+        local searchParam = '%' .. search .. '%'
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+    end
+    
+    query = query .. ' ORDER BY created_at DESC'
+    
+    if limit then
+        query = query .. ' LIMIT ?'
+        table.insert(params, limit)
+    end
+    
+    local rows = MySQL.query.await(query, params)
+	return rows or {}
+end
+
+---@param job string
+---@param limit number|nil
+---@param search string|nil
+---@return Bill[]
+local function fetchBillsByJob(job, limit, search)
+	local query = 'SELECT * FROM billing_bills WHERE job = ?'
+    local params = { job }
+    
+    if search and search ~= '' then
+        query = query .. ' AND (issuer_name LIKE ? OR receiver_name LIKE ? OR description LIKE ? OR issuer_cid LIKE ? OR cid LIKE ?)'
+        local searchParam = '%' .. search .. '%'
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+        table.insert(params, searchParam)
+    end
+    
+    query = query .. ' ORDER BY created_at DESC'
+    
+    if limit then
+        query = query .. ' LIMIT ?'
+        table.insert(params, limit)
+    end
+    
+	local rows = MySQL.query.await(query, params)
+	return rows or {}
+end
+
+---@param cid string
+local function getPlayerWallpaper(cid)
+	local row = MySQL.single.await('SELECT wallpaper FROM billing_wallpapers WHERE cid = ?', { cid })
+	if row and row.wallpaper and row.wallpaper ~= '' then return row.wallpaper end
+	return Config.DefaultWallpaper 
+end
+
+---@param src number
+---@param url string
+local function setPlayerWallpaper(src, url)
+    local player = Bridge.getPlayer(src)
     if not player then return end
-
-    local jobName = select(1, Bridge.GetJobInfo(player)) or "unknown"
-    if not Bridge.HasJobPermission(player, jobName, "CanBill") then
-        Bridge.NotifyPlayer(src, 'You do not have permission to bill players', 'Error', 'error')
-        return
-    end
-
-    local senderName = select(2, Bridge.GetPlayerIdentifiers(player)) or "Unknown Player"
-    local senderCid = select(1, Bridge.GetPlayerIdentifiers(player))
-    local targetName = "Unknown"
-    local targetPlayer = Bridge.GetPlayerByCitizenId(cid)
-
-    if targetPlayer then
-        targetName = select(2, Bridge.GetPlayerIdentifiers(targetPlayer)) or "Unknown Player"
+    local cid = Bridge.getCid(player)
+    if not cid or cid == '' then return end
+    local exists = MySQL.scalar.await('SELECT 1 FROM billing_wallpapers WHERE cid = ?', { cid })
+    if exists then
+        MySQL.update.await('UPDATE billing_wallpapers SET wallpaper = ? WHERE cid = ?', { url or '', cid })
     else
-        targetName = Bridge.GetPlayerNameFromCitizenId(cid)
-    end
-
-    local billId = MySQL.insert.await('INSERT INTO bills (sender_cid, sender_name, receiver_cid, receiver_name, amount, reason, date, time, job, paid, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        {
-            senderCid,
-            senderName,
-            cid,
-            targetName,
-            amount,
-            reason,
-            os.date('%Y-%m-%d'),
-            os.date('%H:%M'),
-            jobName,
-            false,
-            "pending"
-        }
-    )
-
-    if billId then
-        local discordMessage = string.format(
-            "**Sender**: %s (CID: %s)\n**Receiver**: %s (CID: %s)\n**Amount**: $%d\n**Reason**: %s",
-            senderName, senderCid, targetName, cid, amount, reason
-        )
-        sendToDiscord("SendBill", "Bill Sent", discordMessage)
-        Bridge.NotifyPlayer(src, 'Bill sent successfully', 'Success', 'success')
-        if targetPlayer then
-            local targetId = Bridge.GetFrameworkName() == "QB" 
-                and targetPlayer.PlayerData.source 
-                or targetPlayer.source
-            Bridge.NotifyPlayer(targetId, 'You received a new bill', 'Info', 'primary')
-        end
-    else
-        Bridge.NotifyPlayer(src, 'Failed to send bill', 'Error', 'error')
-    end
-end)
-
-RegisterNetEvent('peleg-billing:payBill', function(billId, payFromJobAccount)
-    local src = source
-    local player = Bridge.GetPlayer(src)
-    if not player then return end
-
-    local bill = GetBillById(billId)
-    if not bill then
-        Bridge.NotifyPlayer(src, 'Bill not found', 'Error', 'error')
-        return
-    end
-
-    if bill.status == "paid" then
-        Bridge.NotifyPlayer(src, 'This bill has already been paid', 'Error', 'error')
-        return
-    elseif bill.status == "canceled" then
-        Bridge.NotifyPlayer(src, 'This bill has been canceled', 'Error', 'error')
-        return
-    elseif bill.status == "refunded" then
-        Bridge.NotifyPlayer(src, 'This bill has been refunded', 'Error', 'error')
-        return
-    end
-
-    local amount = tonumber(bill.amount)
-    local jobName = bill.job
-
-    if Bridge.HasEnoughMoney(player, amount) then
-        local bankBalance = Bridge.GetMoney(player, 'bank')
-        if bankBalance >= amount then
-            Bridge.RemoveMoney(player, 'bank', amount)
-        else
-            local remainingAmount = amount - bankBalance
-            Bridge.RemoveMoney(player, 'bank', bankBalance)
-            Bridge.RemoveMoney(player, 'cash', remainingAmount)
-        end
-
-        Bridge.AddMoneyToSociety(jobName, amount)
-        UpdateBillStatus(billId, "paid", select(2, Bridge.GetPlayerIdentifiers(player)) or "Unknown")
-        Bridge.NotifyPlayer(src, 'Bill paid successfully', 'Success', 'success')
-        local playerName = select(2, Bridge.GetPlayerIdentifiers(player)) or "Unknown Player"
-        local discordMsg = ("Bill ID: %d of $%s paid by %s and credited to %s society account"):format(billId, amount, playerName, jobName)
-        sendToDiscord("SendBill", "Bill Paid", discordMsg)
-    else
-        Bridge.NotifyPlayer(src, 'Not enough money to pay the bill', 'Error', 'error')
-    end
-end)
-
-RegisterNetEvent('peleg-billing:server:checkBalance', function(amount)
-    local src = source
-    local player = Bridge.GetPlayer(src)
-    local hasEnough = false
-    if player and amount then
-        hasEnough = Bridge.HasEnoughMoney(player, amount)
-    end
-    TriggerClientEvent('peleg-billing:client:checkBalanceResponse', src, hasEnough)
-end)
-
-RegisterNetEvent('peleg-billing:requestBillingMenu', function(citizenId)
-    local src = source
-    local player = Bridge.GetPlayer(src)
-    if not player then return end
-
-    local myCid = select(1, Bridge.GetPlayerIdentifiers(player))
-    citizenId = citizenId or myCid
-
-    local unpaidBills, billingHistory = GetPlayerBills(citizenId)
-    local societyBills = {}
-    local jobName = select(1, Bridge.GetJobInfo(player)) or "unknown"
-    local jobGrade = select(2, Bridge.GetJobInfo(player)) or 0
-
-    local menuData = {
-        myBills = unpaidBills,
-        billingHistory = billingHistory,
-        societyBills = {},
-        jobAccess = false,
-        inspectCitizen = false,
-        canBill = false,
-        cid = citizenId
-    }
-
-    if Config.Jobs[jobName] ~= nil then
-        local jobConfig = nil
-        local jobGradeStr = tostring(jobGrade)
-        if Config.Jobs[jobName][jobGradeStr] then
-            jobConfig = Config.Jobs[jobName][jobGradeStr]
-        elseif Config.Jobs[jobName]["0"] and jobGrade <= 0 then
-            jobConfig = Config.Jobs[jobName]["0"]
-        elseif Config.Jobs[jobName]["1"] and jobGrade <= 1 then
-            jobConfig = Config.Jobs[jobName]["1"]
-        end
-
-        if jobConfig then
-            menuData.jobAccess = jobConfig.BossAccess or false
-            menuData.inspectCitizen = jobConfig.InspectCitizen or false
-            menuData.canBill = jobConfig.CanBill or false
-
-            if jobConfig.BossAccess then
-                menuData.societyBills = GetSocietyBills(jobName)
-            end
-        end
-    end
-
-    TriggerClientEvent('peleg-billing:openBillingMenu', src, menuData)
-end)
-
-RegisterNetEvent('peleg-billing:server:cancelBill', function(billId)
-    local src = source
-    local player = Bridge.GetPlayer(src)
-    if not player then return end
-
-    local bill = GetBillById(billId)
-    if not bill then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.billNotFound or 'Bill not found', 
-            Config.Locale['error'] or 'Error', 'error')
-        return
-    end
-
-    local playerCid = select(1, Bridge.GetPlayerIdentifiers(player))
-    local playerName = select(2, Bridge.GetPlayerIdentifiers(player)) or "Unknown"
-    local jobName = select(1, Bridge.GetJobInfo(player)) or "unknown"
-    local canCancel = false
-
-    if bill.receiver_cid == playerCid then
-        canCancel = true
-    elseif jobName == bill.job then
-        canCancel = Bridge.HasJobPermission(player, jobName, "CancelBill") or 
-                    Bridge.HasJobPermission(player, jobName, "BossAccess") or
-                    (select(1, Bridge.GetJobInfo(player)) == jobName and select(3, Bridge.GetJobInfo(player)))
-    end
-
-    if not canCancel then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.noPermissionCancel or 
-            'You do not have permission to cancel this bill', Config.Locale['error'] or 'Error', 'error')
-        return
-    end
-
-    if UpdateBillStatus(billId, 'canceled', playerName) then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.cancelSuccess or 
-            'Bill canceled successfully', Config.Locale['success'] or 'Success', 'success')
-        if Config.EnableDiscordLogs then
-            local message = string.format('Bill #%s canceled by %s (%s)', billId, playerName, playerCid)
-            sendToDiscord("Bill Canceled", "Bill Canceled", message)
-        end
-    else
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.cancelFailed or 
-            'Error updating bill status in database', Config.Locale['error'] or 'Error', 'error')
-    end
-end)
-
-RegisterNetEvent('peleg-billing:server:refundBill', function(billId)
-    local src = source
-    local player = Bridge.GetPlayer(src)
-    if not player then return end
-
-    local bill = GetBillById(billId)
-    if not bill then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.billNotFound or 'Bill not found', 
-            Config.Locale['error'] or 'Error', 'error')
-        return
-    end
-
-    if bill.status ~= 'paid' then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.billNotPaid or 'This bill has not been paid', 
-            Config.Locale['error'] or 'Error', 'error')
-        return
-    end
-
-    local jobName = select(1, Bridge.GetJobInfo(player)) or "unknown"
-    local playerCid = select(1, Bridge.GetPlayerIdentifiers(player))
-    local playerName = select(2, Bridge.GetPlayerIdentifiers(player)) or "Unknown"
-    local canRefund = Bridge.HasJobPermission(player, bill.job, "RefundBill") or 
-                      Bridge.HasJobPermission(player, bill.job, "BossAccess") or
-                      ((select(1, Bridge.GetJobInfo(player)) == bill.job) and select(3, Bridge.GetJobInfo(player)))
-
-    if not canRefund then
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.noPermissionRefund or 
-            'You do not have permission to refund this bill', Config.Locale['error'] or 'Error', 'error')
-        return
-    end
-
-    if ProcessRefund(bill) then
-        UpdateBillStatus(billId, 'refunded', playerName)
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.refundSuccess or 'Bill refunded successfully', 
-            Config.Locale['success'] or 'Success', 'success')
-        if Config.EnableDiscordLogs then
-            local message = string.format('Bill #%s refunded by %s (%s)', billId, playerName, playerCid)
-            sendToDiscord("Bill Refunded", "Bill Refunded", message)
-        end
-    else
-        Bridge.NotifyPlayer(src, Bridge.GetCurrentLocale().notifications.refundFailed or 'Failed to process refund', 
-            Config.Locale['error'] or 'Error', 'error')
-    end
-end)
-
-RegisterNetEvent('peleg-billing:server:getBillingStats', function(data)
-    local src = source
-    local job = data and data.job
-    local stats = {}
-    local player = Bridge.GetPlayer(src)
-    if player then
-        local cid = select(1, Bridge.GetPlayerIdentifiers(player))
-        stats = GetBillingStatistics(cid, job)
-    end
-    TriggerClientEvent('peleg-billing:client:receiveBillingStats', src, stats)
-end)
-
---- @param tableName string
-local function DebugTableStructure(tableName)
-    print("^3[peleg-billing] Checking table structure for " .. tableName .. "^7")
-    local columns = MySQL.Sync.fetchAll("SHOW COLUMNS FROM " .. tableName)
-    if columns then
-        for i, col in ipairs(columns) do
-            print("^3Column: " .. col.Field .. ", Type: " .. col.Type .. ", Null: " .. col.Null .. "^7")
-        end
-    else
-        print("^1Failed to get columns for " .. tableName .. "^7")
+        MySQL.insert.await('INSERT INTO billing_wallpapers (cid, wallpaper) VALUES (?, ?)', { cid, url or '' })
     end
 end
 
-Citizen.CreateThread(function()
-    Wait(8000)
-    DebugTableStructure("bills")
-end)
+---@param billId number
+---@param src number
+---@return boolean, string|nil
+local function payBill(billId, src)
+    local bill = MySQL.single.await('SELECT * FROM billing_bills WHERE id = ? AND status = "unpaid"', { billId })
+    if not bill then return false, 'bill_not_found' end
+    local actor = Bridge.getPlayer(src)
+    if not actor then return false, 'no_player' end
+    local actorCid = Bridge.getCid(actor)
+    if tostring(actorCid) ~= tostring(bill.cid) then return false, 'not_bill_owner' end
+    local account = bill.account == 'cash' and 'cash' or 'bank'
+    local ok, reason = Bridge.removeMoney(src, account, bill.amount)
+    if not ok then return false, reason or 'payment_failed' end
+    MySQL.update.await('UPDATE billing_bills SET status = "paid", paid_at = NOW() WHERE id = ?', { billId })
+    local logActor = LogsModule.identity(actorCid, GetPlayerName(src), src)
+    local target = LogsModule.identity(bill.cid, nil, nil)
 
---- Runs automatic database migration for the bills table.
-local function MigrateBillsTable()
-    print("^2[peleg-billing] Running automatic database migration^7")
-    local columnCheck = MySQL.Sync.fetchAll("SHOW COLUMNS FROM bills LIKE 'status'")
-    local needsMigration = #columnCheck == 0
-
-    if needsMigration then
-        print("^3[peleg-billing] Adding new columns to bills table^7")
-        MySQL.Sync.execute("ALTER TABLE bills ADD COLUMN IF NOT EXISTS `status` VARCHAR(20) DEFAULT 'pending'")
-        MySQL.Sync.execute("ALTER TABLE bills ADD COLUMN IF NOT EXISTS `canceled_by` VARCHAR(255) DEFAULT NULL")
-        print("^3[peleg-billing] Converting existing bills to new format^7")
-        MySQL.Sync.execute("UPDATE bills SET `status` = 'paid' WHERE `paid` = TRUE AND (`status` IS NULL OR `status` = 'pending')")
-        MySQL.Sync.execute("UPDATE bills SET `status` = 'pending' WHERE `paid` = FALSE AND (`status` IS NULL OR `status` = '')")
-        print("^2[peleg-billing] Migration completed successfully^7")
-    else
-        print("^2[peleg-billing] Database structure is up to date^7")
-    end
+    Boss.addMoney(bill.job, bill.amount)
+    Logs:sendBillEvent('payBill', logActor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = bill.description })
+    return true
 end
 
-Citizen.CreateThread(function()
-    Citizen.Wait(5000)
-    MigrateBillsTable()
-end)
-
---- @param cid string
---- @param job string|nil
---- @return table
-function GetBillingStatistics(cid, job)
-    local stats = {
-        totalRevenue = 0,
-        totalPaid = 0,
-        totalPending = 0,
-        totalCanceled = 0,
-        totalRefunded = 0,
-        paidCount = 0,
-        pendingCount = 0,
-        canceledCount = 0,
-        refundedCount = 0,
-        topJobs = {},
-        monthlyData = {}
-    }
-
-    local currentMonth = os.date("%Y-%m")
-    for i = 0, 5 do
-        local year = tonumber(os.date("%Y"))
-        local month = tonumber(os.date("%m")) - i
-        if month <= 0 then
-            month = month + 12
-            year = year - 1
+---@param billId number
+---@param refundReason string
+---@return boolean
+local function refundBill(billId, refundReason, refunderSrc)
+    local bill = MySQL.single.await('SELECT * FROM billing_bills WHERE id = ?', { billId })
+    if not bill then return false end
+    if bill.status == 'refunded' or bill.status == 'cancelled' then return true end
+    local refunder = refunderSrc and Bridge.getPlayer(refunderSrc) or nil
+    local refunderCid = refunder and Bridge.getCid(refunder) or nil
+    local refunderName = refunder and Bridge.getCharacterName(refunder) or (refunderSrc and GetPlayerName(refunderSrc)) or 'system'
+    local actor = LogsModule.identity(refunderCid, refunderName, refunderSrc)
+    local target = LogsModule.identity(bill.cid, nil, nil)
+    if bill.status == 'unpaid' then
+        local okSafe = pcall(function()
+            MySQL.update.await('UPDATE billing_bills SET status = "cancelled", refunded_at = NOW(), refunded_by_cid = ?, refunded_by_name = ? WHERE id = ?', { refunderCid or '', refunderName or '', billId })
+        end)
+        if not okSafe then
+            MySQL.update.await('UPDATE billing_bills SET status = "cancelled" WHERE id = ?', { billId })
         end
-        local monthKey = string.format("%04d-%02d", year, month)
-        stats.monthlyData[monthKey] = 0
+        Logs:sendBillEvent('refundBill', actor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = 'cancel_unpaid:' .. (refundReason or bill.description or '') })
+        return true
     end
-
-    local query, params
-    if job then
-        query = "SELECT * FROM bills WHERE job = ? ORDER BY date DESC"
-        params = { job }
-    else
-        query = "SELECT * FROM bills WHERE receiver_cid = ? OR sender_cid = ? ORDER BY date DESC"
-        params = { cid, cid }
-    end
-
-    local bills = MySQL.query.await(query, params)
-    if not bills then
-        return stats
-    end
-
-    local jobStats = {}
-    for _, bill in ipairs(bills) do
-        local amount = tonumber(bill.amount) or 0
-        local status = bill.status or (bill.paid and "paid" or "pending")
-        local date = bill.date or ""
-        local job = bill.job or "unknown"
-        local yearMonth = date:sub(1, 7)
-
-        if status == "paid" or bill.paid then
-            stats.totalPaid = stats.totalPaid + amount
-            stats.paidCount = stats.paidCount + 1
-            if stats.monthlyData[yearMonth] ~= nil then
-                stats.monthlyData[yearMonth] = stats.monthlyData[yearMonth] + amount
-            end
-        elseif status == "pending" and not bill.paid then
-            stats.totalPending = stats.totalPending + amount
-            stats.pendingCount = stats.pendingCount + 1
-        elseif status == "canceled" then
-            stats.totalCanceled = stats.totalCanceled + amount
-            stats.canceledCount = stats.canceledCount + 1
-        elseif status == "refunded" then
-            stats.totalRefunded = stats.totalRefunded + amount
-            stats.refundedCount = stats.refundedCount + 1
-        end
-
-        if not jobStats[job] then
-            jobStats[job] = { count = 0, amount = 0 }
-        end
-        jobStats[job].count = jobStats[job].count + 1
-        jobStats[job].amount = jobStats[job].amount + amount
-    end
-
-    local topJobs = {}
-    for jobName, data in pairs(jobStats) do
-        table.insert(topJobs, { job = jobName, count = data.count, amount = data.amount })
-    end
-
-    table.sort(topJobs, function(a, b)
-        return a.amount > b.amount
+    local ok = Bridge.refundByCid(bill.cid, bill.account == 'cash' and 'cash' or 'bank', bill.amount, refundReason or 'billing_refund')
+    if not ok then return false end
+    local okSafe = pcall(function()
+        MySQL.update.await('UPDATE billing_bills SET status = "refunded", refunded_at = NOW(), refunded_by_cid = ?, refunded_by_name = ? WHERE id = ?', { refunderCid or '', refunderName or '', billId })
     end)
-
-    stats.topJobs = {}
-    for i = 1, math.min(5, #topJobs) do
-        table.insert(stats.topJobs, topJobs[i])
+    if not okSafe then
+        MySQL.update.await('UPDATE billing_bills SET status = "refunded" WHERE id = ?', { billId })
     end
 
-    return stats
+    Boss.removeMoney(bill.job, bill.amount)
+    Logs:sendBillEvent('refundBill', actor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = refundReason or bill.description })
+    return true
 end
 
---- @param billId number|string
---- @param playerId number|string
---- @return boolean, string
-function CanRefundBill(billId, playerId)
-    local bill = MySQL.query.await("SELECT * FROM bills WHERE id = ?", { billId })
-    if not bill or #bill == 0 then
-        return false, "Bill not found"
+---@param issuerSrc number
+---@param targetSrc number
+---@param job string
+---@param amount number
+---@param description string
+---@param account 'cash'|'bank'
+---@return number|false
+local function createBill(issuerSrc, targetSrc, job, amount, description, account)
+    amount = math.floor(math.max(0, amount))
+    if Config and Config.TaxEnabled and tonumber(Config.TaxRate) and tonumber(Config.TaxRate) > 0 then
+        local rate = tonumber(Config.TaxRate) / 100.0
+        amount = math.floor(amount * (1.0 + rate))
     end
-
-    bill = bill[1]
-
-    if bill.status == "refunded" then
-        return false, "Bill is already refunded"
-    elseif bill.status == "canceled" then
-        return false, "Bill is already canceled"
+	local issuer = Bridge.getPlayer(issuerSrc)
+	if not issuer then return false end
+    local issuerName = Bridge.getCharacterName(issuer)
+	local issuerCid = Bridge.getCid(issuer)
+    local targetPlayer = targetSrc and Bridge.getPlayer(tonumber(targetSrc)) or nil
+    if not targetPlayer then return false end
+    local targetCid = Bridge.getCid(targetPlayer)
+    local targetName = Bridge.getCharacterName(targetPlayer)
+    local insertId = MySQL.insert.await('INSERT INTO billing_bills (cid, receiver_name, issuer_cid, issuer_name, job, amount, description, account, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "unpaid")', {
+        targetCid, tostring(targetName or ''), issuerCid, issuerName, job, amount, description or '', account or (Config.UseBankAsDefault and 'bank' or 'cash')
+	})
+    if insertId then
+        local actor = LogsModule.identity(issuerCid, issuerName, issuerSrc)
+        local target = LogsModule.identity(targetCid, targetName, nil)
+        Logs:sendBillEvent('createBill', actor, target, { amount = amount, account = account, billId = insertId, job = job, reason = description or '' })
     end
-
-    if not bill.paid then
-        return false, "Bill must be paid before it can be refunded"
-    end
-
-    local player = Bridge.GetPlayer(playerId)
-    if not player then
-        return false, "Player not found"
-    end
-
-    local playerCid = select(1, Bridge.GetPlayerIdentifiers(player))
-    local jobName = select(1, Bridge.GetJobInfo(player)) or "unknown"
-    local isAdmin = (select(1, Bridge.GetJobInfo(player)) == jobName and select(3, Bridge.GetJobInfo(player)))
-    local isSender = playerCid == bill.sender_cid
-
-    if not (isAdmin or isSender) then
-        return false, "You don't have permission to refund this bill"
-    end
-
-    return true, "Bill can be refunded"
+	return insertId or false
 end
 
-
-Citizen.CreateThread(function()
-    local resName       = GetCurrentResourceName()
-    local currentVer    = GetResourceMetadata(resName, 'version', 0)
-
-    local versionURL    = 'https://gist.githubusercontent.com/peleg-development/bb6cc32c814a1b3018a78ee17d665bef/raw/b2205bc274a491662a8481a7779a9b709107ffcf/version.json'
-
-    PerformHttpRequest(versionURL, function(status, body)
-        if status ~= 200 then
-            _print(("[^1%s^7] Failed to fetch version info (HTTP %d)"):format(resName, status))
-            return
-        end
-
-        local ok, data = pcall(json.decode, body)
-        if not ok or not data.version then
-            _print(("[^1%s^7] Invalid version.json format"):format(resName))
-            return
-        end
-
-        if data.version ~= currentVer then
-            _print(("[^4[%s]^7 New release available: %s  (you have %s)"):format(resName, data.version, currentVer))
-            if data.message then
-                for line in data.message:gmatch("[^\r\n]+") do
-                    _print(("    %s"):format(line))
-                end
-            end
-        else
-            _print(("[^2[%s]^7 is up to date (%s)"):format(resName, currentVer))
-        end
-    end, 'GET')
+lib.callback.register('peleg-billing:getNearbyPlayers', function(source)
+	return Bridge.getNearbyPlayers(source)
 end)
+
+lib.callback.register('peleg-billing:getJobs', function(_)
+	return Bridge.getJobs()
+end)
+
+lib.callback.register('peleg-billing:getJobGrades', function(_, job)
+	return Bridge.getJobGrades(job)
+end)
+
+lib.callback.register('peleg-billing:getBillsByCid', function(_, cid)
+	return fetchBillsByCid(cid)
+end)
+
+lib.callback.register('peleg-billing:getBillsByJob', function(_, job)
+	return fetchBillsByJob(job)
+end)
+
+lib.callback.register('peleg-billing:getWallpaper', function(_, cid)
+	return getPlayerWallpaper(cid)
+end)
+
+lib.callback.register('peleg-billing:getAccessConfig', function(_, job)
+    return loadJobAccess(job)
+end)
+
+lib.callback.register('peleg-billing:getSelf', function(source)
+	local player = Bridge.getPlayer(source)
+	if not player then return nil end
+	local cid = Bridge.getCid(player)
+	local job, grade = Bridge.getJob(player)
+	local name = GetPlayerName(source)
+	local wallpaper = getPlayerWallpaper(cid)
+	local boss = Bridge.isBoss and Bridge.isBoss(player) or false
+    
+    return { cid = cid, job = job, grade = grade, name = name, wallpaper = wallpaper, boss = boss, locale = Locales, disableHome = Config.DisableHomeScreen }
+end)
+
+--- @param data table { scope = 'job'|'self', job?: string, cid?: string, limit?: number, search?: string }
+lib.callback.register('peleg-billing:fetchBills', function(source, data)
+	local scope = data and data.scope or 'job'
+	local limit = data and data.limit
+	local search = data and data.search
+	
+	if scope == 'self' then
+		local cid = (data and data.cid) or (function()
+			local p = Bridge.getPlayer(source)
+			return p and Bridge.getCid(p) or ''
+		end)()
+		return fetchBillsByCid(tostring(cid or ''), limit, search)
+	else
+		local job = (data and data.job) or (function()
+			local p = Bridge.getPlayer(source)
+			local j = p and select(2, Bridge.getJob(p)) or ''
+			return j
+		end)()
+		return fetchBillsByJob(tostring(job or ''), limit, search)
+	end
+end)
+
+lib.callback.register('peleg-billing:getMinGrade', function(source)
+    local player, job, _ = getActorInfo(source)
+    if not player then return 0 end
+    return getMinGrade(job)
+end)
+
+RegisterNetEvent('peleg-billing:server:payBill', function(billId)
+	local src = source
+	local ok, reason = payBill(tonumber(billId), src)
+    if not ok then
+        local msg = reason or 'payment_failed'
+        if msg == 'bill_not_found' then
+            msg = L('notify_bill_not_found', 'Bill not found')
+        elseif msg == 'not_bill_owner' then
+            msg = L('notify_not_bill_owner', 'You cannot pay this bill')
+        else
+            msg = L('notify_payment_failed', 'Payment failed')
+        end
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = msg })
+    else
+        TriggerClientEvent('ox_lib:notify', src, { type = 'success', description = L('notify_bill_paid', 'Bill paid') })
+        local player = Bridge.getPlayer(src)
+        if player then
+            local cid = Bridge.getCid(player)
+            local list = fetchBillsByCid(cid, 30)
+            TriggerClientEvent('peleg-billing:client:refreshBills', src, list)
+        end
+	end
+end)
+
+RegisterNetEvent('peleg-billing:server:refundBill', function(billId, reason)
+    local src = source
+    local bill = MySQL.single.await('SELECT * FROM billing_bills WHERE id = ?', { tonumber(billId) })
+    if not bill then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_bill_not_found', 'Bill not found') })
+        return
+    end
+    local player, job, grade = getActorInfo(src)
+    if not player then return end
+    if job ~= bill.job then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_wrong_job', 'Wrong job') })
+        return
+    end
+    if not hasPermission(job, tonumber(grade), 'refundBill') then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
+        return
+    end
+    local ok = refundBill(tonumber(billId), tostring(reason or ''), src)
+    TriggerClientEvent('ox_lib:notify', src, { type = ok and 'success' or 'error', description = ok and L('notify_refunded', 'Refunded') or L('notify_refund_failed', 'Refund failed') })
+    if ok then
+        local player = Bridge.getPlayer(src)
+        if player then
+            local cid = Bridge.getCid(player)
+            local list = fetchBillsByCid(cid, 30)
+            TriggerClientEvent('peleg-billing:client:refreshBills', src, list)
+        end
+    end
+end)
+
+RegisterNetEvent('peleg-billing:server:createBill', function(targetSrc, job, amount, description, account)
+    local src = source
+    local allowed = canOpenTablet(src)
+    if not allowed then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_job_not_allowed', 'Job not allowed') })
+        return
+    end
+    local player, actorJob, grade = getActorInfo(src)
+    if not player then return end
+    if tostring(actorJob) ~= tostring(job) then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_wrong_job', 'Wrong job') })
+        return
+    end
+    if not hasPermission(actorJob, tonumber(grade), 'sendBill') then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
+        return
+    end
+    local id = createBill(src, tonumber(targetSrc), tostring(job), tonumber(amount), tostring(description or ''), account == 'cash' and 'cash' or 'bank')
+    TriggerClientEvent('ox_lib:notify', src, { type = id and 'success' or 'error', description = id and (L('notify_created_bill_num', 'Created bill #')..id) or L('notify_create_failed', 'Create failed') })
+    if id then
+        local player = Bridge.getPlayer(src)
+        if player then
+            local cid = Bridge.getCid(player)
+            local list = fetchBillsByCid(cid, 30)
+            TriggerClientEvent('peleg-billing:client:refreshBills', src, list)
+        end
+    end
+end)
+
+RegisterNetEvent('peleg-billing:server:setGradePerm', function(job, cid, minGrade, data)
+    local src = source
+    local player, actorJob, actorGrade = getActorInfo(src)
+    if not player then return end
+    if tostring(actorJob) ~= tostring(job) then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'Wrong job' })
+        return
+    end
+    local boss = Bridge.isBoss and Bridge.isBoss(player) or false
+    if not boss then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
+        return
+    end
+    if type(data) == 'table' then
+        saveJobAccess(tostring(job), { grades = data })
+    else
+        local grades = Bridge.getJobGrades(actorJob) or {}
+        local map = {}
+        if type(grades) == 'table' then
+            for k, g in pairs(grades) do
+                local level = tonumber((type(g) == 'table' and (g.level or g.grade or g.id)) or k) or 0
+                local allowed = level >= tonumber(minGrade or 0)
+                map[tostring(level)] = { sendBill = allowed, refundBill = allowed }
+            end
+        end
+        saveJobAccess(tostring(job), { grades = map })
+    end
+    TriggerClientEvent('ox_lib:notify', src, { type = 'success', description = L('notify_permissions_updated', 'Permissions updated') })
+end)
+
+RegisterNetEvent('peleg-billing:server:setWallpaper', function(url)
+    local src = source
+    if url then
+        url = url:gsub("&quality=.*", "")
+    end
+    setPlayerWallpaper(src, tostring(url or ''))
+end)
+
+exports('GetBillsByCid', fetchBillsByCid)
+exports('CreateBill', createBill)
+exports('PayBill', payBill)
+exports('RefundBill', refundBill)
+
+RegisterNetEvent('peleg-billing:server:useTablet', function()
+    local src = source
+    if not src then return end
+
+    if canOpenTablet(src) then
+        local player    = Bridge.getPlayer(src)
+        local cid       = player and Bridge.getCid(player)
+        local job, grade= player and Bridge.getJob(player) or { '', 0 }
+        local name      = GetPlayerName(src)
+        local wallpaper = cid and getPlayerWallpaper(cid) or Config.DefaultWallpaper
+        local boss      = player and (Bridge.isBoss and Bridge.isBoss(player) or false) or false
+
+        TriggerClientEvent('peleg-billing:client:open', src, {
+            cid = cid, job = job, grade = grade, name = name,
+            wallpaper = wallpaper, boss = boss, locale = Locales,
+            disableHome = Config.DisableHomeScreen
+        })
+    else
+        TriggerClientEvent('ox_lib:notify', src, {
+            type = 'error',
+            description = L('notify_job_not_allowed', 'Job not allowed')
+        })
+    end
+end)
+
+local function registerUsable()
+	local fw = Bridge.framework()
+	if fw == 'qb' then
+		local QBCore = nil
+		pcall(function()
+			QBCore = exports['qb-core'] and exports['qb-core']:GetCoreObject() or nil
+		end)
+		if QBCore and QBCore.Functions and QBCore.Functions.CreateUseableItem then
+			QBCore.Functions.CreateUseableItem(Config.TabletItem, function(source, _)
+				local allowed = canOpenTablet(source)
+				if allowed then
+                    local player = Bridge.getPlayer(source)
+                    local cid = player and Bridge.getCid(player)
+                    local job, grade = player and Bridge.getJob(player) or {'', 0}
+                    local name = GetPlayerName(source)
+                    local wallpaper = cid and getPlayerWallpaper(cid) or Config.DefaultWallpaper
+                    local boss = player and (Bridge.isBoss and Bridge.isBoss(player) or false) or false
+                    TriggerClientEvent('peleg-billing:client:open', source, { cid = cid, job = job, grade = grade, name = name, wallpaper = wallpaper, boss = boss, locale = Locales, disableHome = Config.DisableHomeScreen })
+                else
+                    TriggerClientEvent('ox_lib:notify', source, { type = 'error', description = L('notify_job_not_allowed', 'Job not allowed') })
+				end
+			end)
+		end
+	elseif fw == 'esx' then
+		local ESX = nil
+		pcall(function()
+			ESX = exports['es_extended'] and exports['es_extended']:getSharedObject() or nil
+		end)
+		if ESX and ESX.RegisterUsableItem then
+			ESX.RegisterUsableItem(Config.TabletItem, function(source)
+				local allowed = canOpenTablet(source)
+				if allowed then
+                    local player = Bridge.getPlayer(source)
+                    local cid = player and Bridge.getCid(player)
+                    local job, grade = player and Bridge.getJob(player) or {'', 0}
+                    local name = GetPlayerName(source)
+                    local wallpaper = cid and getPlayerWallpaper(cid) or Config.DefaultWallpaper
+                    local boss = player and (Bridge.isBoss and Bridge.isBoss(player) or false) or false
+                    TriggerClientEvent('peleg-billing:client:open', source, { cid = cid, job = job, grade = grade, name = name, wallpaper = wallpaper, boss = boss, locale = Locales, disableHome = Config.DisableHomeScreen })
+                else
+                    TriggerClientEvent('ox_lib:notify', source, { type = 'error', description = L('notify_job_not_allowed', 'Job not allowed') })
+				end
+			end)
+		end
+	end
+end
+
+CreateThread(registerUsable)

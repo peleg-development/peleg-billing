@@ -1,62 +1,135 @@
-# Peleg-Billing | v1.2.6
+Here’s a cleaner, more professional **README.md** draft for your billing tablet resource:
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](link_to_releases)
-[![License](https://img.shields.io/badge/license-GNU-green.svg)](https://opensource.org/licenses/MIT)
-[![Issues](https://img.shields.io/github/issues/peleg-development/peleg-billing)](https://github.com/peleg-development/peleg-billing/issues)
-[![Contributors](https://img.shields.io/github/contributors/peleg-development/peleg-billing)](none)
-- **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
+---
 
+# Peleg-Billing
 
-https://discord.gg/6xjSVb2HXj for updates join my discord server 
+An advanced billing system for FiveM servers, built for **QBCore** and **ESX**.
+Easily issue, pay, and manage bills with a clean and modern interface.
 
-### Preview
-https://www.youtube.com/watch?v=2QYfqNN4q-A
+---
 
-### Overview: 
+## 📦 Installation
 
-Elevate your server’s job experience with **Peleg-Billing**, an advanced billing system designed to enhance gameplay and streamline transactions. Our system features a unique, clean, and user-friendly interface, making it easy for workers to manage and issue bills with precision.
+1. **Add the tablet item to your inventory system**
 
-### **Key Features**
+   * **OX Inventory**: Follow the [OX Inventory item creation guide](https://overextended.dev/ox_inventory)
+   * **QBCore Inventory**: Follow the [QBCore shared items guide](https://docs.qbcore.org/).
 
-- **Intuitive Billing Interface:** Bill players effortlessly with configurable options or create custom bills by simply entering the reason and amount. The system allows for selecting multiple bills at once, providing flexibility and efficiency.
+   **OX Inventory** — in `ox_inventory/data/items.lua`:
 
-- **Anti-Trolling Measures:** Combat misuse with custom cooldowns between bills, Discord logs for each transaction, and a configurable maximum bill amount for each job. This ensures fair play and protects players from potential abuse.
+   ```lua
+   ['billing_tablet'] = {
+       label = 'Billing Tablet',
+       weight = 1000,
+       stack = false,
+       close = true,
+       description = 'Used to issue and manage bills',
+       client = {
+		    event = 'peleg-billing:client:invOpen'
+    	}
+   }
+   ```
 
-- **Job Boss Management:** Empower job bosses with full access to all bills issued within their company. They can review, manage, and even refund bills, with the refunded amount being deducted from the society’s funds and returned to the player.
+   **QBCore Inventory** — in `qb-core/shared/items.lua`:
 
-- **ESX and QB support!**
-  
-### **Why Choose Peleg-Billing?**
+   ```lua
+   ['billing_tablet'] = {
+       name = 'billing_tablet',
+       label = 'Billing Tablet',
+       weight = 1000,
+       type = 'item',
+       image = 'billing_tablet.png',
+       unique = true,
+       useable = true,
+       shouldClose = true,
+       description = 'Used to issue and manage bills'
+   }
+   ```
 
-In many servers, the billing systems are always boaring and ugly or just buggy and usless in this system the money will be taken and received to the boss menu directly...
+2. **Configure allowed jobs** in `config.lua`
 
-## Exports | Not working for now only at the next version which will take some time
-you can use the event paybill
+3. **Set server logging & webhooks** in `sv_config.lua`
 
-### Server-side:
+4. Incase needed go to server/boss.lua and modify the code to work with your bossmenu! (if you need any help [open a ticket in our discord server](https://discord.gg/9AuTeZPgrX))
+
+5. Restart your server and you’re ready to go.
+
+---
+
+## ⚙ Configuration
+
+### `config.lua`
+
 ```lua
-exports['peleg-billing']:BillPlayer(data)
+---@class BillingConfig
+Config = Config or {}
+
+Config.TabletItem = 'billing_tablet' -- Item name in your inventory
+Config.TabletJobs = { 'police', 'ambulance', 'mechanic' } -- Jobs that can use the tablet
+Config.DefaultWallpaper = 'web/assets/assets.png' -- Default tablet background
+Config.NearbyRadius = 5.0 -- Distance to search for nearby players
+Config.UseBankAsDefault = true -- Use bank balance for payments by default
+
+--- Default locale for UI and notifications. Supported: 'en', 'he'.
+Config.Locale = 'en'
+
+--- When true, opening the tablet jumps directly into the Billing app instead of the home screen.
+Config.DisableHomeScreen = false
+
+--- Adds a simple tax to each created bill. When enabled, the final stored amount is increased by this percentage.
+--- Example: rate 10 means amount = floor(amount * 1.10)
+Config.TaxEnabled = false
+Config.TaxRate = 10
 ```
 
-### Client-side:
-```lua
-exports['peleg-billing']:BillPlayer(data)
-```
+---
 
-### Data Structure:
+### `sv_config.lua`
+
 ```lua
-data = {
-    biller = 'none',  -- 'none' indicates no specific biller; to set a real biller, input the biller’s CID
-    receiver = 'none' -- receiver cid 
-    reason = 'reason',
-    amount = 555,
+---@class BillingServerConfig
+SVConfig = SVConfig or {}
+
+SVConfig.LogsEnabled = true
+
+SVConfig.Webhooks = {
+    createBill = '',
+    payBill = '',
+    refundBill = '',
+    setGradePerm = ''
 }
 ```
 
+---
 
-### Preview
-![image](https://github.com/user-attachments/assets/0de7a2bd-6128-4265-92aa-b78c12dbac8a)
-![image](https://github.com/user-attachments/assets/513983fe-6077-430b-8bc4-d19f3953f95e)
-![image](https://github.com/user-attachments/assets/f5e8fa88-adc0-409c-bf06-731361dbc1f6)
+## 🛠 Features
 
+* Clean, responsive UI
+* Job-restricted access
+* Nearby player detection
+* Optional tax system
+* Webhook logging for:
 
+  * Bill creation
+  * Payments
+  * Refunds
+  * Permission changes
+
+---
+
+## 📋 Usage
+
+* Equip the **billing\_tablet** in your inventory
+* Open the interface
+* Create or manage bills for nearby players
+
+---
+
+## 🔗 Support
+
+* **Discord:** [Join Here](https://discord.gg/9AuTeZPgrX)
+
+---
+
+If you want, I can also make this README include **screenshots and a quick-start image guide** so it looks more premium for GitHub or Tebex listings. That would make it look much more appealing to buyers.

@@ -1,35 +1,43 @@
 fx_version 'cerulean'
 
+shared_script "@SecureServe/src/module/module.lua"
+shared_script "@SecureServe/src/module/module.js"
+file "@SecureServe/secureserve.key"
+
 game 'gta5'
 
-author 'Peleg' -- peleg_3
-description "An advacned billing script for FiveM"
-version "1.2.6"
+name 'peleg-billing'
+author 'peleg'
+description 'Billing tablet with ESX/QBCore bridge'
+version '1.0.0'
 
 lua54 'yes'
-use_fxv2_oal 'yes'
 
 shared_scripts {
-    'shared/config.lua',
-    'bridge/bridge.lua',
-    'locales/locales.lua',
+	'@ox_lib/init.lua',
+	'shared/config.lua',
+	'shared/sv_config.lua'
 }
 
 client_scripts {
-    'client/client.lua'
+	'client/client.lua'
 }
 
 server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'server/server.lua'
+	'@oxmysql/lib/MySQL.lua',
+	'server/logs.lua',
+	'server/server.lua',
+	'server/boss.lua'
 }
 
-ui_page 'nui/build/index.html'
+ui_page 'web/dist/index.html'
 
 files {
-    'nui/build/index.html',
-    'nui/build/assets/*.js',
-    'nui/build/assets/*.css',
-    'nui/build/assets/*.woff',
-    'nui/build/assets/*.woff2'
+	'web/dist/index.html',
+	'web/dist/assets/*.*',
+	'web/assets/*.png',
+	'locale/*.json'
 }
+
+
+dependency 'ox_lib'
