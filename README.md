@@ -6,7 +6,10 @@ An advanced billing system for FiveM servers, built for **QBCore** and **ESX**.
 Easily issue, pay, and manage bills with a clean and modern interface.
 
 ---
+## Preivew
+[Youtube](https://youtu.be/Du86jiXfFmQ)
 
+---
 ## 📦 Installation
 
 1. **Add the tablet item to your inventory system**
@@ -45,13 +48,15 @@ Easily issue, pay, and manage bills with a clean and modern interface.
    }
    ```
 
-2. **Configure allowed jobs** in `config.lua`
+2. **Add item image** in your invenotry web / html folder
 
-3. **Set server logging & webhooks** in `sv_config.lua`
+3. **Configure allowed jobs** in `config.lua`
 
-4. Incase needed go to server/boss.lua and modify the code to work with your bossmenu! (if you need any help [open a ticket in our discord server](https://discord.gg/9AuTeZPgrX))
+4. **Set server logging & webhooks** in `sv_config.lua`
 
-5. Restart your server and you’re ready to go.
+5. Incase needed go to server/boss.lua and modify the code to work with your bossmenu! (if you need any help [open a ticket in our discord server](https://discord.gg/9AuTeZPgrX))
+
+6. Restart your server and you’re ready to go.
 
 ---
 
