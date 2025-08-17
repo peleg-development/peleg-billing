@@ -8,6 +8,7 @@ Easily issue, pay, and manage bills with a clean and modern interface.
 ---
 ## Preivew
 [Youtube](https://youtu.be/Du86jiXfFmQ)
+<img width="1912" height="1082" alt="image" src="https://github.com/user-attachments/assets/1d48aa88-a3e2-4df9-b13b-91e1f5e0f5db" />
 <img width="1484" height="949" alt="image" src="https://github.com/user-attachments/assets/a771e02d-0178-483e-a018-8a0c934f3712" />
 <img width="1472" height="955" alt="image" src="https://github.com/user-attachments/assets/e4f46f7e-f74d-496b-bc90-8ce70bfc0e0a" />
 <img width="1530" height="967" alt="image" src="https://github.com/user-attachments/assets/42acc351-818b-4779-b788-f7b106ca808a" />
