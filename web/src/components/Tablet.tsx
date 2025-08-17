@@ -9,17 +9,11 @@ type AppType = 'home' | 'settings' | 'billing'
 
 
 interface TabletProps {
-  /**
-   * Optional data passed from client when opening, used to speed up initial UI state.
-   */
+ 
   initialSelf?: { cid: string, job: string, grade: number, name: string, wallpaper?: string, boss?: boolean }
-  /**
-   * Runtime locale dictionary injected from server; used to localize UI at runtime.
-   */
+  
   locale?: Record<string, string>
-  /**
-   * When true, skip home screen and open billing immediately.
-   */
+ 
   forceBilling?: boolean
 }
 
@@ -86,9 +80,7 @@ const Tablet = ({ initialSelf, locale, forceBilling }: TabletProps) => {
     return () => window.removeEventListener('message', onMsg)
   }, [initialSelf])
 
-  /**
-   * Smoothly transitions between apps using a fade/scale animation.
-   */
+
   const switchApp = (appType: AppType) => {
     if (currentApp === appType) return
     setTransitionStage('out')
