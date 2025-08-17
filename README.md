@@ -6,8 +6,7 @@ An advanced billing system for FiveM servers, built for **QBCore** and **ESX**.
 Easily issue, pay, and manage bills with a clean and modern interface.
 
 ---
-## Preivew
-# [Youtube](https://youtu.be/Du86jiXfFmQ)
+## [Preview Click Here](https://youtu.be/Du86jiXfFmQ)
 
 # Images:
 <img width="1912" height="1082" alt="image" src="https://github.com/user-attachments/assets/1d48aa88-a3e2-4df9-b13b-91e1f5e0f5db" />
