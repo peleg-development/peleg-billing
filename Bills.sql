@@ -19,14 +19,12 @@ CREATE TABLE IF NOT EXISTS `billing_bills` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- Job access configuration per job, stored as JSON
 CREATE TABLE IF NOT EXISTS `billing_job_perms` (
   `job` VARCHAR(60) NOT NULL,
   `data` LONGTEXT NOT NULL,
   PRIMARY KEY (`job`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Wallpapers per player
 CREATE TABLE IF NOT EXISTS `billing_wallpapers` (
   `cid` VARCHAR(60) NOT NULL,
   `wallpaper` VARCHAR(1024) NOT NULL,
