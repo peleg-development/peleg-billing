@@ -190,6 +190,93 @@ local function refundByCid(cid, account, amount, reason)
 	return false
 end
 
+---@param cid string
+---@return any player
+local function getPlayerByCid(cid)
+	if Framework == 'qb' then
+		return QB.Functions.GetPlayerByCitizenId(cid)
+	elseif Framework == 'esx' or Framework == 'oldesx' then
+		return ESX.GetPlayerFromIdentifier(cid)
+	end
+	return nil
+end
+
+---@param src number
+---@param account 'cash'|'bank'
+---@param amount number
+---@param reason string
+---@return boolean success
+local function addMoney(src, account, amount, reason)
+	amount = math.floor(math.max(0, amount))
+	
+	local player = getPlayer(src)
+	if not player then return false end
+	
+	if Framework == 'qb' then
+		player.Functions.AddMoney(account, amount, reason or 'billing_add')
+		return true
+	elseif Framework == 'esx' or Framework == 'oldesx' then
+		if account == 'cash' then 
+			player.addMoney(amount) 
+		else 
+			player.addAccountMoney('bank', amount) 
+		end
+		return true
+	end
+	return false
+end
+
+---@param cid string
+---@param account 'cash'|'bank'
+---@param amount number
+---@param reason string
+---@return boolean success
+local function addMoneyOffline(cid, account, amount, reason)
+	amount = math.floor(math.max(0, amount))
+	
+	if Framework == 'qb' then
+		MySQL.update('UPDATE players SET '..(account == 'bank' and 'bank' or 'money')..' = '..(account == 'bank' and 'bank' or 'money')..' + ? WHERE citizenid = ?', { amount, cid })
+		return true
+	elseif Framework == 'esx' or Framework == 'oldesx' then
+		if account == 'cash' then
+			MySQL.update('UPDATE users SET money = money + ? WHERE identifier = ?', { amount, cid })
+		else
+			MySQL.update('UPDATE users SET bank = bank + ? WHERE identifier = ?', { amount, cid })
+		end
+		return true
+	end
+	return false
+end
+
+---@param cid string
+---@param account 'cash'|'bank'
+---@param amount number
+---@return boolean success, string|nil reason
+local function removeMoneyOffline(cid, account, amount)
+	amount = math.floor(math.max(0, amount))
+	
+	if Framework == 'qb' then
+		local currentMoney = MySQL.scalar.await('SELECT '..(account == 'bank' and 'bank' or 'money')..' FROM players WHERE citizenid = ?', { cid })
+		if not currentMoney or currentMoney < amount then
+			return false, 'insufficient_funds'
+		end
+		MySQL.update('UPDATE players SET '..(account == 'bank' and 'bank' or 'money')..' = '..(account == 'bank' and 'bank' or 'money')..' - ? WHERE citizenid = ?', { amount, cid })
+		return true
+	elseif Framework == 'esx' or Framework == 'oldesx' then
+		local currentMoney = MySQL.scalar.await('SELECT '..(account == 'cash' and 'money' or 'bank')..' FROM users WHERE identifier = ?', { cid })
+		if not currentMoney or currentMoney < amount then
+			return false, 'insufficient_funds'
+		end
+		if account == 'cash' then
+			MySQL.update('UPDATE users SET money = money - ? WHERE identifier = ?', { amount, cid })
+		else
+			MySQL.update('UPDATE users SET bank = bank - ? WHERE identifier = ?', { amount, cid })
+		end
+		return true
+	end
+	return false, 'unknown_framework'
+end
+
 ---@param src number
 ---@return table
 local function getNearbyPlayers(src)
@@ -266,6 +353,10 @@ Bridge = {
     getCharacterName = getCharacterName,
 	removeMoney = removeMoney,
 	refundByCid = refundByCid,
+	getPlayerByCid = getPlayerByCid,
+	addMoney = addMoney,
+	addMoneyOffline = addMoneyOffline,
+	removeMoneyOffline = removeMoneyOffline,
 	getNearbyPlayers = getNearbyPlayers,
 	getJobs = getJobs,
 	getJobGrades = getJobGrades,

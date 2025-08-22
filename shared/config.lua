@@ -16,3 +16,11 @@ Config.DisableHomeScreen = false
 --- Example: rate 10 means amount = floor(amount * 1.10)
 Config.TaxEnabled = false
 Config.TaxRate = 10
+
+--- Auto pay configuration - automatically pays bills after a specified time
+Config.AutoPayEnabled = false
+Config.AutoPayTime = 24 -- hours until auto pay
+
+--- Billing cut configuration - gives issuer a percentage of paid bills
+Config.BillingCutEnabled = false
+Config.BillingCutPercentage = 10 -- percentage cut for issuer (0-100)

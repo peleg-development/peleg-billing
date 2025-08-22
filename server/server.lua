@@ -243,7 +243,70 @@ local function payBill(billId, src)
     local target = LogsModule.identity(bill.cid, nil, nil)
 
     Boss.addMoney(bill.job, bill.amount)
+    
+    -- Handle billing cut if enabled
+    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 then
+        local cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
+        if cutAmount > 0 then
+            local issuerPlayer = Bridge.getPlayerByCid(bill.issuer_cid)
+            if issuerPlayer then
+                -- Player is online, give money directly
+                local cutAccount = bill.account == 'cash' and 'cash' or 'bank'
+                Bridge.addMoney(issuerPlayer, cutAccount, cutAmount, 'billing_cut')
+            else
+                -- Player is offline, add to database
+                Bridge.addMoneyOffline(bill.issuer_cid, bill.account == 'cash' and 'cash' or 'bank', cutAmount, 'billing_cut')
+            end
+        end
+    end
+    
     Logs:sendBillEvent('payBill', logActor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = bill.description })
+    return true
+end
+
+---@param billId number
+---@return boolean, string|nil
+local function autoPayBill(billId)
+    local bill = MySQL.single.await('SELECT * FROM billing_bills WHERE id = ? AND status = "unpaid"', { billId })
+    if not bill then return false, 'bill_not_found' end
+    
+    -- Check if player has enough money
+    local player = Bridge.getPlayerByCid(bill.cid)
+    local account = bill.account == 'cash' and 'cash' or 'bank'
+    
+    if player then
+        -- Player is online, check and remove money
+        local ok, reason = Bridge.removeMoney(player, account, bill.amount)
+        if not ok then return false, reason or 'payment_failed' end
+    else
+        -- Player is offline, check and remove from database
+        local ok, reason = Bridge.removeMoneyOffline(bill.cid, account, bill.amount)
+        if not ok then return false, reason or 'payment_failed' end
+    end
+    
+    MySQL.update.await('UPDATE billing_bills SET status = "paid", paid_at = NOW() WHERE id = ?', { billId })
+    
+    Boss.addMoney(bill.job, bill.amount)
+    
+    -- Handle billing cut if enabled
+    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 then
+        local cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
+        if cutAmount > 0 then
+            local issuerPlayer = Bridge.getPlayerByCid(bill.issuer_cid)
+            if issuerPlayer then
+                -- Player is online, give money directly
+                local cutAccount = bill.account == 'cash' and 'cash' or 'bank'
+                Bridge.addMoney(issuerPlayer, cutAccount, cutAmount, 'billing_cut')
+            else
+                -- Player is offline, add to database
+                Bridge.addMoneyOffline(bill.issuer_cid, bill.account == 'cash' and 'cash' or 'bank', cutAmount, 'billing_cut')
+            end
+        end
+    end
+    
+    local logActor = LogsModule.identity(bill.cid, nil, nil)
+    local target = LogsModule.identity(bill.cid, nil, nil)
+    Logs:sendBillEvent('autoPayBill', logActor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = bill.description })
     return true
 end
 
@@ -581,3 +644,25 @@ local function registerUsable()
 end
 
 CreateThread(registerUsable)
+
+--- Auto pay thread - checks for bills that need to be auto-paid
+CreateThread(function()
+    while true do
+        if Config.AutoPayEnabled and Config.AutoPayTime and Config.AutoPayTime > 0 then
+            local hoursAgo = Config.AutoPayTime
+            local unpaidBills = MySQL.query.await('SELECT id FROM billing_bills WHERE status = "unpaid" AND created_at <= DATE_SUB(NOW(), INTERVAL ? HOUR)', { hoursAgo })
+            
+            if unpaidBills and #unpaidBills > 0 then
+                for _, bill in ipairs(unpaidBills) do
+                    local ok, reason = autoPayBill(bill.id)
+                    if not ok then
+                        print(('Auto pay failed for bill %d: %s'):format(bill.id, reason or 'unknown'))
+                    end
+                end
+            end
+        end
+        
+        -- Check every 5 minutes
+        Wait(400000)
+    end
+end)
