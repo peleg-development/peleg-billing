@@ -14,7 +14,7 @@ Easily issue, pay, and manage bills with a clean and modern interface.
 
 <table>
   <tr>
-    <td><img alt="Screenshot 1" src="https://github.com/user-attachments/assets/5573eb94-6802-40d6-b646-a86533d537e4" width="600"></td>
+    <td><img alt="Screenshot 1" src="[https://github.com/user-attachments/assets/5573eb94-6802-40d6-b646-a86533d537e4](https://github.com/user-attachments/assets/e406c1af-f808-4937-8aea-54b20d09451f)" width="600"></td>
     <td><img alt="Screenshot 2" src="https://github.com/user-attachments/assets/a771e02d-0178-483e-a018-8a0c934f3712" width="600"></td>
   </tr>
   <tr>
