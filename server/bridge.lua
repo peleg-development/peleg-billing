@@ -19,21 +19,21 @@ local function detectFramework()
 	
 	-- Check for modern ESX
 	pcall(function()
-		ESX = exports['es_extended'] and exports['es_extended']:getSharedObject() or nil
+		ESX = exports['es_extended']:getSharedObject()
 	end)
-	if ESX and type(ESX.GetPlayerFromId) == 'function' then
+	if ESX then
 		Framework = 'esx'
 		return Framework
 	end
 	
-	-- Check for old ESX (legacy versions)
+	
 	pcall(function()
 		while ESX == nil do
 			TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 			Citizen.Wait(0)
 		end
 	end)
-	if ESX and type(ESX.GetPlayerFromId) == 'function' then
+	if ESX then
 		Framework = 'oldesx'
 		return Framework
 	end

@@ -248,13 +248,22 @@ local function payBill(billId, src)
     if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 then
         local cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
         if cutAmount > 0 then
-            local issuerPlayer = Bridge.getPlayerByCid(bill.issuer_cid)
-            if issuerPlayer then
-                -- Player is online, give money directly
+            -- Try to find online issuer first
+            local issuerSrc = nil
+            for _, playerSrc in ipairs(GetPlayers()) do
+                local player = Bridge.getPlayer(tonumber(playerSrc))
+                if player and Bridge.getCid(player) == bill.issuer_cid then
+                    issuerSrc = tonumber(playerSrc)
+                    break
+                end
+            end
+            
+            if issuerSrc then
+                -- Issuer is online, give money directly
                 local cutAccount = bill.account == 'cash' and 'cash' or 'bank'
-                Bridge.addMoney(issuerPlayer, cutAccount, cutAmount, 'billing_cut')
+                Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
             else
-                -- Player is offline, add to database
+                -- Issuer is offline, add to database
                 Bridge.addMoneyOffline(bill.issuer_cid, bill.account == 'cash' and 'cash' or 'bank', cutAmount, 'billing_cut')
             end
         end
@@ -271,12 +280,21 @@ local function autoPayBill(billId)
     if not bill then return false, 'bill_not_found' end
     
     -- Check if player has enough money
-    local player = Bridge.getPlayerByCid(bill.cid)
     local account = bill.account == 'cash' and 'cash' or 'bank'
     
-    if player then
+    -- Try to find online player first
+    local playerSrc = nil
+    for _, src in ipairs(GetPlayers()) do
+        local player = Bridge.getPlayer(tonumber(src))
+        if player and Bridge.getCid(player) == bill.cid then
+            playerSrc = tonumber(src)
+            break
+        end
+    end
+    
+    if playerSrc then
         -- Player is online, check and remove money
-        local ok, reason = Bridge.removeMoney(player, account, bill.amount)
+        local ok, reason = Bridge.removeMoney(playerSrc, account, bill.amount)
         if not ok then return false, reason or 'payment_failed' end
     else
         -- Player is offline, check and remove from database
@@ -292,13 +310,22 @@ local function autoPayBill(billId)
     if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 then
         local cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
         if cutAmount > 0 then
-            local issuerPlayer = Bridge.getPlayerByCid(bill.issuer_cid)
-            if issuerPlayer then
-                -- Player is online, give money directly
+            -- Try to find online issuer first
+            local issuerSrc = nil
+            for _, src in ipairs(GetPlayers()) do
+                local player = Bridge.getPlayer(tonumber(src))
+                if player and Bridge.getCid(player) == bill.issuer_cid then
+                    issuerSrc = tonumber(src)
+                    break
+                end
+            end
+            
+            if issuerSrc then
+                -- Issuer is online, give money directly
                 local cutAccount = bill.account == 'cash' and 'cash' or 'bank'
-                Bridge.addMoney(issuerPlayer, cutAccount, cutAmount, 'billing_cut')
+                Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
             else
-                -- Player is offline, add to database
+                -- Issuer is offline, add to database
                 Bridge.addMoneyOffline(bill.issuer_cid, bill.account == 'cash' and 'cash' or 'bank', cutAmount, 'billing_cut')
             end
         end
@@ -570,11 +597,11 @@ exports('GetBillsByCid', fetchBillsByCid)
 exports('CreateBill', createBill)
 exports('PayBill', payBill)
 exports('RefundBill', refundBill)
+exports('AutoPayBill', autoPayBill)
 
 RegisterNetEvent('peleg-billing:server:useTablet', function()
     local src = source
     if not src then return end
-
     if canOpenTablet(src) then
         local player    = Bridge.getPlayer(src)
         local cid       = player and Bridge.getCid(player)
@@ -619,7 +646,7 @@ local function registerUsable()
 				end
 			end)
 		end
-	elseif fw == 'esx' then
+	elseif fw == 'esx' and GetResourceState('ox_inventory') ~= 'started' then
 		local ESX = nil
 		pcall(function()
 			ESX = exports['es_extended'] and exports['es_extended']:getSharedObject() or nil
