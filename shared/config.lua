@@ -7,7 +7,7 @@ Config.NearbyRadius = 5.0
 Config.UseBankAsDefault = true
 
 --- Default locale for UI and notifications. Supported: 'en', 'he', 'fr', 'ru', 
-Config.Locale = 'en'
+Config.Locale = 'he'
 
 --- When true, opening the tablet jumps directly into the Billing app instead of the home screen.
 Config.DisableHomeScreen = false
@@ -18,9 +18,9 @@ Config.TaxEnabled = false
 Config.TaxRate = 10
 
 --- Auto pay configuration - automatically pays bills after a specified time
-Config.AutoPayEnabled = false
-Config.AutoPayTime = 24 -- hours until auto pay
+Config.AutoPayEnabled = true
+Config.AutoPayTime = 72 -- hours until auto pay
 
 --- Billing cut configuration - gives issuer a percentage of paid bills
-Config.BillingCutEnabled = false
+Config.BillingCutEnabled = true
 Config.BillingCutPercentage = 10 -- percentage cut for issuer (0-100)

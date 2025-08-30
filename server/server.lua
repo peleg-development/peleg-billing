@@ -593,9 +593,78 @@ RegisterNetEvent('peleg-billing:server:setWallpaper', function(url)
     setPlayerWallpaper(src, tostring(url or ''))
 end)
 
+---@param cid string
+---@return Bill[]
+local function getAllPlayerBills(cid)
+    local query = 'SELECT * FROM billing_bills WHERE cid = ? ORDER BY created_at DESC'
+    local rows = MySQL.query.await(query, { cid })
+    return rows or {}
+end
+
+---@param billId number
+---@param cid string
+---@return boolean, string|nil
+local function payBillByCid(billId, cid)
+    local bill = MySQL.single.await('SELECT * FROM billing_bills WHERE id = ? AND status = "unpaid" AND cid = ?', { billId, cid })
+    if not bill then return false, 'bill_not_found' end
+    
+    local account = bill.account == 'cash' and 'cash' or 'bank'
+    
+    local playerSrc = nil
+    for _, src in ipairs(GetPlayers()) do
+        local player = Bridge.getPlayer(tonumber(src))
+        if player and Bridge.getCid(player) == cid then
+            playerSrc = tonumber(src)
+            break
+        end
+    end
+    
+    local ok, reason
+    if playerSrc then
+        ok, reason = Bridge.removeMoney(playerSrc, account, bill.amount)
+    else
+        ok, reason = Bridge.removeMoneyOffline(cid, account, bill.amount)
+    end
+    
+    if not ok then return false, reason or 'payment_failed' end
+    
+    MySQL.update.await('UPDATE billing_bills SET status = "paid", paid_at = NOW() WHERE id = ?', { billId })
+    
+    Boss.addMoney(bill.job, bill.amount)
+    
+    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 then
+        local cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
+        if cutAmount > 0 then
+            local issuerSrc = nil
+            for _, src in ipairs(GetPlayers()) do
+                local player = Bridge.getPlayer(tonumber(src))
+                if player and Bridge.getCid(player) == bill.issuer_cid then
+                    issuerSrc = tonumber(src)
+                    break
+                end
+            end
+            
+            if issuerSrc then
+                local cutAccount = bill.account == 'cash' and 'cash' or 'bank'
+                Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
+            else
+                Bridge.addMoneyOffline(bill.issuer_cid, bill.account == 'cash' and 'cash' or 'bank', cutAmount, 'billing_cut')
+            end
+        end
+    end
+    
+    local logActor = LogsModule.identity(cid, nil, nil)
+    local target = LogsModule.identity(bill.cid, nil, nil)
+    Logs:sendBillEvent('payBillByCid', logActor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = bill.description })
+    
+    return true
+end
+
 exports('GetBillsByCid', fetchBillsByCid)
+exports('GetAllPlayerBills', getAllPlayerBills)
 exports('CreateBill', createBill)
 exports('PayBill', payBill)
+exports('PayBillByCid', payBillByCid)
 exports('RefundBill', refundBill)
 exports('AutoPayBill', autoPayBill)
 
@@ -672,7 +741,8 @@ end
 
 CreateThread(registerUsable)
 
---- Auto pay thread - checks for bills that need to be auto-paid
+
+
 CreateThread(function()
     while true do
         if Config.AutoPayEnabled and Config.AutoPayTime and Config.AutoPayTime > 0 then
@@ -689,7 +759,6 @@ CreateThread(function()
             end
         end
         
-        -- Check every 5 minutes
         Wait(400000)
     end
 end)
