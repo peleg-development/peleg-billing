@@ -43,6 +43,9 @@ local function detectFramework()
 end
 
 detectFramework()
+Citizen.CreateThread(function()
+	detectFramework()
+end)
 
 ---@param source number
 ---@return any player
