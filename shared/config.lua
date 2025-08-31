@@ -7,7 +7,7 @@ Config.NearbyRadius = 5.0
 Config.UseBankAsDefault = true
 
 --- Default locale for UI and notifications. Supported: 'en', 'he', 'fr', 'ru', 
-Config.Locale = 'he'
+Config.Locale = 'en'
 
 --- When true, opening the tablet jumps directly into the Billing app instead of the home screen.
 Config.DisableHomeScreen = false
