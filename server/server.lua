@@ -780,8 +780,8 @@ CreateThread(function()
     while true do
         if Config.AutoPayEnabled and Config.AutoPayTime and Config.AutoPayTime > 0 then
             local hoursAgo = Config.AutoPayTime
-            local unpaidBills = MySQL.query.await('SELECT id FROM billing_bills WHERE status = "unpaid" AND created_at <= DATE_SUB(NOW(), INTERVAL ? HOUR)', { hoursAgo })
-            
+            local unpaidBills = MySQL.query.await('SELECT id FROM billing_bills WHERE status = "unpaid" AND TIMESTAMPDIFF(HOUR, created_at, NOW()) >= ?', { hoursAgo })
+
             if unpaidBills and #unpaidBills > 0 then
                 for _, bill in ipairs(unpaidBills) do
                     local ok, reason = autoPayBill(bill.id)
@@ -791,7 +791,7 @@ CreateThread(function()
                 end
             end
         end
-        
+
         Wait(400000)
     end
 end)
