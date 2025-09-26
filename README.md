@@ -1,6 +1,11 @@
-
-
 # Peleg-Billing
+
+<div align="center">
+
+[![Support Discord](https://img.shields.io/badge/Support%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZVWbpqfYj5)
+[![Tebex Store](https://img.shields.io/badge/Tebex%20Store-111111)](https://peleg-development.tebex.io/)
+
+</div>
 
 An advanced billing system for FiveM servers, built for **QBCore** and **ESX**.
 Easily issue, pay, and manage bills with a clean and modern interface.
@@ -14,7 +19,7 @@ Easily issue, pay, and manage bills with a clean and modern interface.
 
 <table>
   <tr>
-    <td><img alt="Screenshot 1" src="https://github.com/user-attachments/assets/e406c1af-f808-4937-8aea-54b20d09451f" width="600"></td>
+    <td><img alt="Screenshot 1" src="https://github.com/user-attachments/assets/bf63abb1-65f1-4a64-873f-581ead9b60ed" width="600"></td>
     <td><img alt="Screenshot 2" src="https://github.com/user-attachments/assets/a771e02d-0178-483e-a018-8a0c934f3712" width="600"></td>
   </tr>
   <tr>
