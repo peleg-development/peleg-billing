@@ -535,7 +535,7 @@ RegisterNetEvent('peleg-billing:server:refundBill', function(billId, reason)
         TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_wrong_job', 'Wrong job') })
         return
     end
-    if not hasPermission(job, tonumber(grade), 'refundBill') then
+    if not hasPermission(job, tonumber(grade), 'refundBill') and not Config.PermssionsDisabled then
         TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
         return
     end
@@ -564,10 +564,10 @@ RegisterNetEvent('peleg-billing:server:createBill', function(targetSrc, job, amo
         TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_wrong_job', 'Wrong job') })
         return
     end
-    if not hasPermission(actorJob, tonumber(grade), 'sendBill') then
+   if not hasPermission(actorJob, tonumber(grade), 'sendBill') and not Config.PermssionsDisabled then
         TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
         return
-    end
+    end 
     local id = createBill(src, tonumber(targetSrc), tostring(job), tonumber(amount), tostring(description or ''), account == 'cash' and 'cash' or 'bank')
     TriggerClientEvent('ox_lib:notify', src, { type = id and 'success' or 'error', description = id and (L('notify_created_bill_num', 'Created bill #')..id) or L('notify_create_failed', 'Create failed') })
     if id then
@@ -592,7 +592,7 @@ RegisterNetEvent('peleg-billing:server:setGradePerm', function(job, cid, minGrad
     if not boss then
         TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = L('notify_no_permission', 'Insufficient permission') })
         return
-    end
+    end 
     if type(data) == 'table' then
         saveJobAccess(tostring(job), { grades = data })
     else

@@ -2,6 +2,7 @@
 local showing = false
 local billsShowing = false
 
+local presets = Config.PresetBills
 
 local function playTabletAnim()
     local ped = PlayerPedId()
@@ -138,6 +139,11 @@ RegisterNUICallback('peleg-billing:getWallpaper', function(data, cb)
     end, data and data.cid or '')
 end)
 
+RegisterNUICallback('peleg-billing:getPresets', function(data, cb)
+    local job = data and data.job or ''
+    cb({ categories = presets[job] or {} })
+end)
+
 RegisterNetEvent('peleg-billing:client:refreshBills', function(rows)
 	SendNUIMessage({ type = 'billing:refresh', rows = rows })
 end)
@@ -169,5 +175,4 @@ RegisterNUICallback('peleg-billing:setWallpaper', function(data, cb)
 	TriggerServerEvent('peleg-billing:server:setWallpaper', tostring(url or ''))
 	cb(true)
 end)
-
 
