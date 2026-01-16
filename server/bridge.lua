@@ -173,7 +173,8 @@ local function refundByCid(cid, account, amount, reason)
 			player.Functions.AddMoney(account, amount, reason or 'billing_refund')
 			return true
 		else
-			MySQL.update('UPDATE players SET '..(account == 'bank' and 'bank' or 'money')..' = '..(account == 'bank' and 'bank' or 'money')..' + ? WHERE citizenid = ?', { amount, cid })
+			local jsonPath = account == 'bank' and '$.bank' or '$.cash'
+			MySQL.update('UPDATE players SET money = JSON_SET(money, ?, COALESCE(JSON_EXTRACT(money, ?), 0) + ?) WHERE citizenid = ?', { jsonPath, jsonPath, amount, cid })
 			return true
 		end
 	elseif Framework == 'esx' or Framework == 'oldesx' then
@@ -238,7 +239,8 @@ local function addMoneyOffline(cid, account, amount, reason)
 	amount = math.floor(math.max(0, amount))
 	
 	if Framework == 'qb' then
-		MySQL.update('UPDATE players SET '..(account == 'bank' and 'bank' or 'money')..' = '..(account == 'bank' and 'bank' or 'money')..' + ? WHERE citizenid = ?', { amount, cid })
+		local jsonPath = account == 'bank' and '$.bank' or '$.cash'
+		MySQL.update('UPDATE players SET money = JSON_SET(money, ?, COALESCE(JSON_EXTRACT(money, ?), 0) + ?) WHERE citizenid = ?', { jsonPath, jsonPath, amount, cid })
 		return true
 	elseif Framework == 'esx' or Framework == 'oldesx' then
 		if account == 'cash' then
@@ -259,11 +261,12 @@ local function removeMoneyOffline(cid, account, amount)
 	amount = math.floor(math.max(0, amount))
 	
 	if Framework == 'qb' then
-		local currentMoney = MySQL.scalar.await('SELECT '..(account == 'bank' and 'bank' or 'money')..' FROM players WHERE citizenid = ?', { cid })
-		if not currentMoney or currentMoney < amount then
+		local jsonPath = account == 'bank' and '$.bank' or '$.cash'
+		local currentMoney = MySQL.scalar.await('SELECT COALESCE(JSON_EXTRACT(money, ?), 0) FROM players WHERE citizenid = ?', { jsonPath, cid })
+		if not currentMoney or tonumber(currentMoney) < amount then
 			return false, 'insufficient_funds'
 		end
-		MySQL.update('UPDATE players SET '..(account == 'bank' and 'bank' or 'money')..' = '..(account == 'bank' and 'bank' or 'money')..' - ? WHERE citizenid = ?', { amount, cid })
+		MySQL.update('UPDATE players SET money = JSON_SET(money, ?, COALESCE(JSON_EXTRACT(money, ?), 0) - ?) WHERE citizenid = ?', { jsonPath, jsonPath, amount, cid })
 		return true
 	elseif Framework == 'esx' or Framework == 'oldesx' then
 		local currentMoney = MySQL.scalar.await('SELECT '..(account == 'cash' and 'money' or 'bank')..' FROM users WHERE identifier = ?', { cid })

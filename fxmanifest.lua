@@ -4,7 +4,7 @@ game 'gta5'
 name 'peleg-billing'
 author 'peleg'
 description 'Billing tablet with ESX/QBCore'
-version '1.3.0'
+version '1.4.0'
 
 lua54 'yes'
 

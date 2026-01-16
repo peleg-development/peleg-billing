@@ -2,7 +2,7 @@ local Bridge = require('server.bridge')
 local LogsModule = require('server.logs')
 local Logs = LogsModule.Logs
 local Boss = require('server.boss')
-
+print = function() end
 local Locales = {}
 
 --- Loads the active locale table from JSON file on resource start.
