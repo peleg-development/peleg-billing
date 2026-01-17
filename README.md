@@ -7,6 +7,19 @@
 
 </div>
 
+<p>
+<a href="https://peleg-development.tebex.io/category/3054065">
+<strong>Buy Peleg Billing Phone App</strong>
+</a>
+</p>
+
+<img
+  src="https://github.com/user-attachments/assets/6edcf751-216f-4462-a670-5196701f4ba4"
+  width="369"
+  height="663"
+  alt="Peleg Billing Phone App Preview"
+/>
+
 An advanced billing system for FiveM servers, built for **QBCore** and **ESX**.
 Easily issue, pay, and manage bills with a clean and modern interface.
 
