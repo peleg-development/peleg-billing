@@ -14,7 +14,13 @@
 </p>
 
 <img
-  src="https://github.com/user-attachments/assets/6edcf751-216f-4462-a670-5196701f4ba4"
+  src="https://github.com/user-attachments/assets/c41c7560-6209-4710-9a30-9837f5b0bb0a"
+  width="369"
+  height="663"
+  alt="Peleg Billing Phone App Preview"
+/>
+<img
+  src="https://github.com/user-attachments/assets/ee37750a-5353-4ac0-8966-d0f43933b7b2"
   width="369"
   height="663"
   alt="Peleg Billing Phone App Preview"
