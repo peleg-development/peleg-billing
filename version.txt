@@ -1,0 +1,7 @@
+1.3.2
+
+- Add Peleg Billing Phone Support (LBPHONE)
+
+Buy The App: https://peleg-development.tebex.io/category/3054065
+
+https://github.com/peleg-development/peleg-billing/releases/latest
