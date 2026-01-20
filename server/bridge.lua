@@ -5,13 +5,6 @@ local QB = nil
 local ESX = nil
 local VRP = nil
 
-local ESX_DB = {
-	checked = false,
-	has_accounts = false,
-	has_bank = false,
-	has_money = false,
-}
-
 ---@return boolean
 local function _resStarted(name)
 	if type(GetResourceState) ~= 'function' then return true end
@@ -63,25 +56,6 @@ local function ensureFramework()
 		detectFramework(true)
 	end
 	return Framework
-end
-
----@return nil
-local function ensureEsxSchema()
-	if ESX_DB.checked then return end
-	ESX_DB.checked = true
-
-	if not MySQL or not MySQL.scalar or not MySQL.scalar.await then return end
-
-	local function hasColumn(col)
-		local ok = pcall(function()
-			MySQL.scalar.await(("SELECT `%s` FROM users LIMIT 1"):format(col))
-		end)
-		return ok == true
-	end
-
-	ESX_DB.has_accounts = hasColumn('accounts')
-	ESX_DB.has_bank = hasColumn('bank')
-	ESX_DB.has_money = hasColumn('money')
 end
 
 ---@param name string
@@ -250,7 +224,7 @@ local function refundByCid(cid, account, amount, reason)
 			return true
 		end
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
-		MySQL.update([[
+		MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
@@ -269,42 +243,14 @@ local function refundByCid(cid, account, amount, reason)
 			return true
 		end
 
-		ensureEsxSchema()
-
-		if account == 'cash' then
-			if ESX_DB.has_money then
-				MySQL.update('UPDATE users SET money = money + ? WHERE identifier = ?', { amount, cid })
-				return true
-			end
-			if ESX_DB.has_accounts then
-				local name = 'money'
-				local pathExpr = esxAccountsPathExpr(name)
-				local valExpr = esxAccountsValueExpr(name)
-				MySQL.update(
-					("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
-					{ amount, cid }
-				)
-				return true
-			end
-			return false
-		end
-
-		if ESX_DB.has_bank then
-			MySQL.update('UPDATE users SET bank = bank + ? WHERE identifier = ?', { amount, cid })
-			return true
-		end
-		if ESX_DB.has_accounts then
-			local name = 'bank'
-			local pathExpr = esxAccountsPathExpr(name)
-			local valExpr = esxAccountsValueExpr(name)
-			MySQL.update(
-				("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
-				{ amount, cid }
-			)
-			return true
-		end
-
-		return false
+		local name = (account == 'cash') and 'money' or 'bank'
+		local pathExpr = esxAccountsPathExpr(name)
+		local valExpr = esxAccountsValueExpr(name)
+		MySQL.update.await(
+			("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
+			{ amount, cid }
+		)
+		return true
 	end
 
 	return false
@@ -358,7 +304,7 @@ local function addMoneyOffline(cid, account, amount, reason)
 
 	if Framework == 'qb' then
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
-		MySQL.update([[
+		MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
@@ -371,42 +317,14 @@ local function addMoneyOffline(cid, account, amount, reason)
 	end
 
 	if Framework == 'esx' then
-		ensureEsxSchema()
-
-		if account == 'cash' then
-			if ESX_DB.has_money then
-				MySQL.update('UPDATE users SET money = money + ? WHERE identifier = ?', { amount, cid })
-				return true
-			end
-			if ESX_DB.has_accounts then
-				local name = 'money'
-				local pathExpr = esxAccountsPathExpr(name)
-				local valExpr = esxAccountsValueExpr(name)
-				MySQL.update(
-					("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
-					{ amount, cid }
-				)
-				return true
-			end
-			return false
-		end
-
-		if ESX_DB.has_bank then
-			MySQL.update('UPDATE users SET bank = bank + ? WHERE identifier = ?', { amount, cid })
-			return true
-		end
-		if ESX_DB.has_accounts then
-			local name = 'bank'
-			local pathExpr = esxAccountsPathExpr(name)
-			local valExpr = esxAccountsValueExpr(name)
-			MySQL.update(
-				("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
-				{ amount, cid }
-			)
-			return true
-		end
-
-		return false
+		local name = (account == 'cash') and 'money' or 'bank'
+		local pathExpr = esxAccountsPathExpr(name)
+		local valExpr = esxAccountsValueExpr(name)
+		MySQL.update.await(
+			("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
+			{ amount, cid }
+		)
+		return true
 	end
 
 	return false
@@ -422,7 +340,7 @@ local function removeMoneyOffline(cid, account, amount)
 
 	if Framework == 'qb' then
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
-		local affected = MySQL.update([[
+		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
@@ -437,42 +355,13 @@ local function removeMoneyOffline(cid, account, amount)
 	end
 
 	if Framework == 'esx' then
-		ensureEsxSchema()
-
-		if account == 'cash' then
-			if ESX_DB.has_money then
-				local affected = MySQL.update('UPDATE users SET money = money - ? WHERE identifier = ? AND money >= ?', { amount, cid, amount })
-				if (affected or 0) > 0 then return true end
-				return false, 'insufficient_funds'
-			end
-			if ESX_DB.has_accounts then
-				local name = 'money'
-				local pathExpr = esxAccountsPathExpr(name)
-				local valExpr = esxAccountsValueExpr(name)
-				local q = ("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s - ?) WHERE identifier = ? AND %s >= ?"):format(pathExpr, valExpr, valExpr)
-				local affected = MySQL.update(q, { amount, cid, amount })
-				if (affected or 0) > 0 then return true end
-				return false, 'insufficient_funds'
-			end
-			return false, 'unknown_schema'
-		end
-
-		if ESX_DB.has_bank then
-			local affected = MySQL.update('UPDATE users SET bank = bank - ? WHERE identifier = ? AND bank >= ?', { amount, cid, amount })
-			if (affected or 0) > 0 then return true end
-			return false, 'insufficient_funds'
-		end
-		if ESX_DB.has_accounts then
-			local name = 'bank'
-			local pathExpr = esxAccountsPathExpr(name)
-			local valExpr = esxAccountsValueExpr(name)
-			local q = ("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s - ?) WHERE identifier = ? AND %s >= ?"):format(pathExpr, valExpr, valExpr)
-			local affected = MySQL.update(q, { amount, cid, amount })
-			if (affected or 0) > 0 then return true end
-			return false, 'insufficient_funds'
-		end
-
-		return false, 'unknown_schema'
+		local name = (account == 'cash') and 'money' or 'bank'
+		local pathExpr = esxAccountsPathExpr(name)
+		local valExpr = esxAccountsValueExpr(name)
+		local q = ("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s - ?) WHERE identifier = ? AND %s >= ?"):format(pathExpr, valExpr, valExpr)
+		local affected = MySQL.update.await(q, { amount, cid, amount })
+		if (affected or 0) > 0 then return true end
+		return false, 'insufficient_funds'
 	end
 
 	return false, 'unknown_framework'
