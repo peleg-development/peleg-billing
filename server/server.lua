@@ -795,3 +795,48 @@ CreateThread(function()
         Wait(400000)
     end
 end)
+
+
+local RESOURCE = GetCurrentResourceName()
+local VERSION_URL = "https://raw.githubusercontent.com/peleg-development/peleg-billing/main/version.txt"
+
+CreateThread(function()
+    Wait(3000)
+
+    local currentVersion = GetResourceMetadata(RESOURCE, "version", 0)
+
+    if not currentVersion then
+        print(("^1[%s]^7 Version not found in fxmanifest.lua"):format(RESOURCE))
+        return
+    end
+
+    PerformHttpRequest(VERSION_URL, function(status, response)
+        if status ~= 200 or not response then
+            print(("^1[%s]^7 Failed to fetch version.txt"):format(RESOURCE))
+            return
+        end
+
+        local lines = {}
+        for line in response:gmatch("[^\r\n]+") do
+            lines[#lines + 1] = line
+        end
+
+        local latestVersion = lines[1]
+
+        if not latestVersion then
+            print(("^1[%s]^7 Invalid version.txt format"):format(RESOURCE))
+            return
+        end
+
+        if latestVersion == currentVersion then
+            print(("^2[%s]^7 Up to date (v%s)"):format(RESOURCE, currentVersion))
+        else
+            print(("^3[%s]^7 Outdated!"):format(RESOURCE))
+            print(("^7Current: ^1v%s^7 | Latest: ^2v%s"):format(currentVersion, latestVersion))
+
+            for i = 2, #lines do
+                print("^7" .. lines[i])
+            end
+        end
+    end, "GET")
+end)
