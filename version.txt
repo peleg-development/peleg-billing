@@ -1,6 +1,7 @@
-1.4.0
+1.4.1
 
 - Add Peleg Billing Phone Support (LBPHONE)
+- Added Support For New QB Banking
 
 Buy The App: https://peleg-development.tebex.io/category/3054065
 

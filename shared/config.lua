@@ -1,5 +1,8 @@
 Config = {}
 
+-- 'qb-management' (old) or 'qb-banking' (new)
+Config.QBSociety = 'qb-banking'
+
 Config.TabletItem = 'billing_tablet'
 Config.TabletJobs = { 'police', 'ambulance', 'mechanic', 'atoms', 'firefighter', 'realestate' }
 Config.DefaultWallpaper = 'web/assets/wallpaper.png'
