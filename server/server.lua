@@ -225,6 +225,56 @@ local function setPlayerWallpaper(src, url)
     end
 end
 
+---@param cid string
+---@return number|nil
+local function findOnlineSourceByCid(cid)
+    if not cid or cid == '' then return nil end
+    local wantedCid = tostring(cid)
+    for _, playerSrc in ipairs(GetPlayers()) do
+        local src = tonumber(playerSrc)
+        local player = src and Bridge.getPlayer(src) or nil
+        if player and tostring(Bridge.getCid(player)) == wantedCid then
+            return src
+        end
+    end
+    return nil
+end
+
+---@param bill Bill
+---@return number
+local function applyBillingCut(bill)
+    if not (Config and Config.BillingCutEnabled) then
+        return 0
+    end
+
+    local rawPercent = tonumber(Config.BillingCutPercentage) or 0
+    local cutPercent = math.floor(math.max(0, math.min(100, rawPercent)))
+    if cutPercent <= 0 then
+        return 0
+    end
+
+    local issuerCid = tostring((bill and bill.issuer_cid) or '')
+    if issuerCid == '' then
+        return 0
+    end
+
+    local amount = math.floor(math.max(0, tonumber((bill and bill.amount) or 0) or 0))
+    local cutAmount = math.floor(amount * (cutPercent / 100))
+    if cutAmount <= 0 then
+        return 0
+    end
+
+    local issuerSrc = findOnlineSourceByCid(issuerCid)
+    local success = false
+    if issuerSrc then
+        success = Bridge.addMoney(issuerSrc, 'bank', cutAmount, 'billing_cut') == true
+    else
+        success = Bridge.addMoneyOffline(issuerCid, 'bank', cutAmount, 'billing_cut') == true
+    end
+
+    return success and cutAmount or 0
+end
+
 ---@param billId number
 ---@param src number
 ---@return boolean, string|nil
@@ -242,47 +292,12 @@ local function payBill(billId, src)
     local logActor = LogsModule.identity(actorCid, GetPlayerName(src), src)
     local target = LogsModule.identity(bill.cid, nil, nil)
 
-    -- Handle billing cut if enabled
-    local cutAmount = 0
-    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 and bill.issuer_cid and bill.issuer_cid ~= '' then
-        cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
-        if cutAmount > 0 then
-            -- Debug print
-            print(string.format("[BILLING CUT] Processing cut for bill %d: %d%% of %d = %d", bill.id, Config.BillingCutPercentage, bill.amount, cutAmount))
-            print(string.format("[BILLING CUT] Issuer CID: %s", bill.issuer_cid))
-            
-            local issuerSrc = nil
-            for _, playerSrc in ipairs(GetPlayers()) do
-                local player = Bridge.getPlayer(tonumber(playerSrc))
-                if player and Bridge.getCid(player) == bill.issuer_cid then
-                    issuerSrc = tonumber(playerSrc)
-                    break
-                end
-            end
-            
-            if issuerSrc then
-                -- Issuer is online, give money directly
-                local cutAccount = 'bank' -- Always give cut to bank account for consistency
-                local success = Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
-                print(string.format("[BILLING CUT] Gave %d to online issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            else
-                -- Issuer is offline, add to database
-                local success = Bridge.addMoneyOffline(bill.issuer_cid, 'bank', cutAmount, 'billing_cut')
-                print(string.format("[BILLING CUT] Gave %d to offline issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            end
-        end
-    else
-        print(string.format("[BILLING CUT] Cut disabled or no issuer. Enabled: %s, Percentage: %s, Issuer: %s", 
-            tostring(Config.BillingCutEnabled), 
-            tostring(Config.BillingCutPercentage), 
-            tostring(bill.issuer_cid)))
-    end
-    
-    -- Add remaining amount to boss menu (total amount minus cut)
-    local bossAmount = bill.amount - cutAmount
+    local cutAmount = applyBillingCut(bill)
+
+    -- Add remaining amount to boss menu (total amount minus successful cut transfer)
+    local bossAmount = math.floor(math.max(0, (tonumber(bill.amount) or 0) - cutAmount))
     if bossAmount > 0 then
         Boss.addMoney(bill.job, bossAmount)
-        print(string.format("[BILLING CUT] Added %d to boss menu (original: %d, cut: %d)", bossAmount, bill.amount, cutAmount))
     end
     
     Logs:sendBillEvent('payBill', logActor, target, { amount = bill.amount, account = bill.account, billId = bill.id, job = bill.job, reason = bill.description })
@@ -320,38 +335,10 @@ local function autoPayBill(billId)
     
     MySQL.update.await('UPDATE billing_bills SET status = "paid", paid_at = NOW() WHERE id = ?', { billId })
     
-    -- Handle billing cut if enabled
-    local cutAmount = 0
-    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 and bill.issuer_cid and bill.issuer_cid ~= '' then
-        cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
-        if cutAmount > 0 then
-            print(string.format("[AUTO-PAY BILLING CUT] Processing cut for bill %d: %d%% of %d = %d", bill.id, Config.BillingCutPercentage, bill.amount, cutAmount))
-            
-            -- Try to find online issuer first
-            local issuerSrc = nil
-            for _, src in ipairs(GetPlayers()) do
-                local player = Bridge.getPlayer(tonumber(src))
-                if player and Bridge.getCid(player) == bill.issuer_cid then
-                    issuerSrc = tonumber(src)
-                    break
-                end
-            end
-            
-            if issuerSrc then
-                -- Issuer is online, give money directly
-                local cutAccount = 'bank' -- Always give cut to bank account for consistency
-                local success = Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
-                print(string.format("[AUTO-PAY BILLING CUT] Gave %d to online issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            else
-                -- Issuer is offline, add to database
-                local success = Bridge.addMoneyOffline(bill.issuer_cid, 'bank', cutAmount, 'billing_cut')
-                print(string.format("[AUTO-PAY BILLING CUT] Gave %d to offline issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            end
-        end
-    end
-    
-    -- Add remaining amount to boss menu (total amount minus cut)
-    local bossAmount = bill.amount - cutAmount
+    local cutAmount = applyBillingCut(bill)
+
+    -- Add remaining amount to boss menu (total amount minus successful cut transfer)
+    local bossAmount = math.floor(math.max(0, (tonumber(bill.amount) or 0) - cutAmount))
     if bossAmount > 0 then
         Boss.addMoney(bill.job, bossAmount)
     end
@@ -655,35 +642,10 @@ local function payBillByCid(billId, cid)
     
     MySQL.update.await('UPDATE billing_bills SET status = "paid", paid_at = NOW() WHERE id = ?', { billId })
     
-    -- Handle billing cut if enabled
-    local cutAmount = 0
-    if Config.BillingCutEnabled and Config.BillingCutPercentage and Config.BillingCutPercentage > 0 and bill.issuer_cid and bill.issuer_cid ~= '' then
-        cutAmount = math.floor(bill.amount * (Config.BillingCutPercentage / 100))
-        if cutAmount > 0 then
-            print(string.format("[PAY BY CID BILLING CUT] Processing cut for bill %d: %d%% of %d = %d", bill.id, Config.BillingCutPercentage, bill.amount, cutAmount))
-            
-            local issuerSrc = nil
-            for _, src in ipairs(GetPlayers()) do
-                local player = Bridge.getPlayer(tonumber(src))
-                if player and Bridge.getCid(player) == bill.issuer_cid then
-                    issuerSrc = tonumber(src)
-                    break
-                end
-            end
-            
-            if issuerSrc then
-                local cutAccount = 'bank' -- Always give cut to bank account for consistency
-                local success = Bridge.addMoney(issuerSrc, cutAccount, cutAmount, 'billing_cut')
-                print(string.format("[PAY BY CID BILLING CUT] Gave %d to online issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            else
-                local success = Bridge.addMoneyOffline(bill.issuer_cid, 'bank', cutAmount, 'billing_cut')
-                print(string.format("[PAY BY CID BILLING CUT] Gave %d to offline issuer %s (success: %s)", cutAmount, bill.issuer_cid, tostring(success)))
-            end
-        end
-    end
-    
-    -- Add remaining amount to boss menu (total amount minus cut)
-    local bossAmount = bill.amount - cutAmount
+    local cutAmount = applyBillingCut(bill)
+
+    -- Add remaining amount to boss menu (total amount minus successful cut transfer)
+    local bossAmount = math.floor(math.max(0, (tonumber(bill.amount) or 0) - cutAmount))
     if bossAmount > 0 then
         Boss.addMoney(bill.job, bossAmount)
     end

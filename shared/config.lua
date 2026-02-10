@@ -2,6 +2,9 @@ Config = {}
 
 -- 'qb-management' (old) or 'qb-banking' (new)
 Config.QBSociety = 'qb-banking'
+-- Also supported: 'renewed-banking'
+-- When using renewed-banking, set true if your account names are "society_<job>" instead of "<job>".
+Config.RenewedSocietyPrefix = false
 
 Config.TabletItem = 'billing_tablet'
 Config.TabletJobs = { 'police', 'ambulance', 'mechanic', 'atoms', 'firefighter', 'realestate' }

@@ -224,7 +224,7 @@ local function refundByCid(cid, account, amount, reason)
 			return true
 		end
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
-		MySQL.update.await([[
+		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
@@ -233,7 +233,7 @@ local function refundByCid(cid, account, amount, reason)
 			)
 			WHERE citizenid = ?
 		]], { jsonPath, jsonPath, amount, cid })
-		return true
+		return (affected or 0) > 0
 	end
 
 	if Framework == 'esx' then
@@ -246,11 +246,11 @@ local function refundByCid(cid, account, amount, reason)
 		local name = (account == 'cash') and 'money' or 'bank'
 		local pathExpr = esxAccountsPathExpr(name)
 		local valExpr = esxAccountsValueExpr(name)
-		MySQL.update.await(
+		local affected = MySQL.update.await(
 			("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
 			{ amount, cid }
 		)
-		return true
+		return (affected or 0) > 0
 	end
 
 	return false
@@ -304,7 +304,7 @@ local function addMoneyOffline(cid, account, amount, reason)
 
 	if Framework == 'qb' then
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
-		MySQL.update.await([[
+		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
@@ -313,18 +313,18 @@ local function addMoneyOffline(cid, account, amount, reason)
 			)
 			WHERE citizenid = ?
 		]], { jsonPath, jsonPath, amount, cid })
-		return true
+		return (affected or 0) > 0
 	end
 
 	if Framework == 'esx' then
 		local name = (account == 'cash') and 'money' or 'bank'
 		local pathExpr = esxAccountsPathExpr(name)
 		local valExpr = esxAccountsValueExpr(name)
-		MySQL.update.await(
+		local affected = MySQL.update.await(
 			("UPDATE users SET accounts = JSON_SET(COALESCE(accounts, '{}'), %s, %s + ?) WHERE identifier = ?"):format(pathExpr, valExpr),
 			{ amount, cid }
 		)
-		return true
+		return (affected or 0) > 0
 	end
 
 	return false
