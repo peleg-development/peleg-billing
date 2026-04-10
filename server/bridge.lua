@@ -68,6 +68,11 @@ local function esxAccountsValueExpr(name)
 	return "CAST(COALESCE(JSON_UNQUOTE(COALESCE(" .. obj .. ", " .. arr .. ")), '0') AS SIGNED)"
 end
 
+---@return string sqlExpr
+local function qbMoneyValueExpr()
+	return "CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(money, '{}'), ?)), '0') AS DECIMAL(18,2))"
+end
+
 ---@param name string
 ---@return string sqlExpr
 local function esxAccountsPathExpr(name)
@@ -223,13 +228,14 @@ local function refundByCid(cid, account, amount, reason)
 			player.Functions.AddMoney(account, amount, reason or 'billing_refund')
 			return true
 		end
+		local moneyExpr = qbMoneyValueExpr()
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
 		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
 				?,
-				CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(money, '{}'), ?)), '0') AS SIGNED) + ?
+				]] .. moneyExpr .. [[ + ?
 			)
 			WHERE citizenid = ?
 		]], { jsonPath, jsonPath, amount, cid })
@@ -303,13 +309,14 @@ local function addMoneyOffline(cid, account, amount, reason)
 	amount = math.floor(math.max(0, amount))
 
 	if Framework == 'qb' then
+		local moneyExpr = qbMoneyValueExpr()
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
 		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
 				?,
-				CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(money, '{}'), ?)), '0') AS SIGNED) + ?
+				]] .. moneyExpr .. [[ + ?
 			)
 			WHERE citizenid = ?
 		]], { jsonPath, jsonPath, amount, cid })
@@ -339,16 +346,17 @@ local function removeMoneyOffline(cid, account, amount)
 	amount = math.floor(math.max(0, amount))
 
 	if Framework == 'qb' then
+		local moneyExpr = qbMoneyValueExpr()
 		local jsonPath = (account == 'bank') and '$.bank' or '$.cash'
 		local affected = MySQL.update.await([[
 			UPDATE players
 			SET money = JSON_SET(
 				COALESCE(money, '{}'),
 				?,
-				CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(money, '{}'), ?)), '0') AS SIGNED) - ?
+				]] .. moneyExpr .. [[ - ?
 			)
 			WHERE citizenid = ?
-			  AND CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(money, '{}'), ?)), '0') AS SIGNED) >= ?
+			  AND ]] .. moneyExpr .. [[ >= ?
 		]], { jsonPath, jsonPath, amount, cid, jsonPath, amount })
 		if (affected or 0) > 0 then return true end
 		return false, 'insufficient_funds'
